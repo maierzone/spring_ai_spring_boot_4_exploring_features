@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+      ============================================================================
+      Spring AI Demo : Spring Boot 4 / Java 21
+      ============================================================================
+      Demonstrationsanwendung fuer die "Top 10" Spring-AI-Features.
+      LLM-Provider: Anthropic (Claude). Build-Tool: Maven.
+
+      Hinweis zu den Versionen:
+        * Spring Boot 4.0.6 ist die vom Auftraggeber gewuenschte GA-Version.
+        * Spring AI 2.0.0-M8 ist die erste Spring-AI-Linie fuer Spring Boot 4 /
+          Spring Framework 7 und liegt bereits auf Maven Central (kein
+          Milestone-Repository erforderlich).
+      ============================================================================
+    -->
+
+    <!-- Spring-Boot-Parent liefert sinnvolle Defaults (Plugin-Versionen, UTF-8, JUnit5, ...) -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>4.0.6</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.example</groupId>
+    <artifactId>spring-ai-demo</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>spring-ai-demo</name>
+    <description>Top-10 Spring AI Feature-Demo auf Spring Boot 4 / Java 21</description>
+
+    <properties>
+        <!-- Java 21 (im Build-Environment verfügbar; Spring Boot 4 verlangt >= 17) -->
+        <java.version>21</java.version>
+        <!-- Zentrale Stelle für die Spring-AI-Version -->
+        <spring-ai.version>2.0.0-M8</spring-ai.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring-AI-BOM: hält alle Spring-AI-Module auf einer konsistenten Version -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Web-Layer (REST-Controller) für die Feature-Demos -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring-AI-Starter für Anthropic/Claude: liefert ChatModel, ChatClient,
+             Tool-Calling, Multimodalität und Chat-Memory-Autokonfiguration -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-anthropic</artifactId>
+        </dependency>
+
+        <!-- Advisor-Modul mit QuestionAnswerAdvisor (RAG) und dem VectorStore-Retrieval -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-advisors-vector-store</artifactId>
+        </dependency>
+
+        <!-- Test-Stack: JUnit 5, Mockito, Spring-Test, AssertJ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Reactor-Test für das Testen der Streaming-Endpunkte (Flux) -->
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Erstellt ein ausführbares Fat-JAR -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

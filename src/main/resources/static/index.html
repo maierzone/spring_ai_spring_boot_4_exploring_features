@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spring AI Demo – Developer-Konsole</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Spring AI – Developer-Konsole</h1>
+    <p>Triggert die Backend-Endpunkte der Dev-Features direkt aus dem Browser.
+       Die Structured-Output-Analyse wird grafisch ausgewertet.</p>
+  </header>
+
+  <main>
+    <!-- FEATURE 4: Structured Output mit grafischer Auswertung -->
+    <section class="panel">
+      <h2>4 · Structured Output – Ticket-Analyse</h2>
+      <p class="hint">Freitext rein → typisierte Analyse (Kategorie, Priorität, Sentiment).
+        Ruft <code>POST /api/tickets/analyze</code> auf. (Benötigt einen gültigen API-Key.)</p>
+      <label for="ticketText">Support-Ticket</label>
+      <textarea id="ticketText">Nach dem letzten Update kann ich mich nicht mehr einloggen. Das ist extrem aergerlich, ich brauche dringend eine Loesung!</textarea>
+      <div class="row" style="margin-top:.6rem">
+        <button id="analyzeBtn" onclick="analyzeTicket()">Analysieren</button>
+      </div>
+      <div id="ticketViz" class="viz hidden">
+        <div class="card">
+          <div class="card-label">Kategorie</div>
+          <span id="categoryBadge" class="badge">–</span>
+        </div>
+        <div class="card">
+          <div class="card-label">Priorität</div>
+          <div id="prioritySegments" class="segments"></div>
+        </div>
+        <div class="card full">
+          <div class="card-label">Kunden-Sentiment</div>
+          <div class="gauge-wrap">
+            <svg id="sentimentGauge" width="160" height="92" viewBox="0 0 160 92" aria-hidden="true"></svg>
+            <span id="sentimentLabel" class="gauge-label">–</span>
+          </div>
+        </div>
+        <div class="card full">
+          <div class="card-label">Zusammenfassung</div>
+          <div id="ticketSummary" class="summary">–</div>
+        </div>
+      </div>
+      <div id="ticketError" class="result error hidden"></div>
+    </section>
+
+    <!-- FEATURE 6: Tool Calling -->
+    <section class="panel">
+      <h2>6 · Tool Calling – Produktkatalog</h2>
+      <p class="hint">Das Modell ruft bei Bedarf den Katalog-Service auf.
+        Ruft <code>GET /api/tools</code> auf. (Benötigt einen gültigen API-Key.)</p>
+      <div class="row">
+        <div>
+          <label for="toolsInput">Frage</label>
+          <input type="text" id="toolsInput" value="Wie viele Monitore sind auf Lager?">
+        </div>
+        <button onclick="askTools()">Fragen</button>
+      </div>
+      <div id="toolsResult" class="result hidden"></div>
+    </section>
+
+    <!-- FEATURE 7: RAG -->
+    <section class="panel">
+      <h2>7 · RAG – Wissensspeicher</h2>
+      <p class="hint">Antwort auf Basis abgerufener Dokumente. <code>GET /api/rag</code> (Antwort, API-Key)
+        bzw. <code>GET /api/rag/sources</code> (nur Quellen, <strong>ohne</strong> API-Key).</p>
+      <div class="row">
+        <div>
+          <label for="ragInput">Frage</label>
+          <input type="text" id="ragInput" value="Was ist Tool Calling?">
+        </div>
+        <button onclick="askRag()">Antwort</button>
+        <button class="secondary" onclick="showSources()">Nur Quellen zeigen</button>
+      </div>
+      <div id="ragResult" class="result hidden"></div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
