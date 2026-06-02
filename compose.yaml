@@ -1,0 +1,25 @@
+# ============================================================================
+# PostgreSQL fuer die Datenbank-Features der Spring-AI-Demo
+# ----------------------------------------------------------------------------
+# Spring Boot 4 erkennt diese Datei automatisch (Dependency
+# 'spring-boot-docker-compose'): Beim 'mvn spring-boot:run' wird der Container
+# gestartet, die DataSource wird aus den hier gesetzten Werten verdrahtet, und
+# beim Beenden wird der Container wieder gestoppt. Kein manuelles 'docker run'.
+#
+# Voraussetzung: Eine laufende Docker-Engine. Die Tests benoetigen Docker NICHT
+# (sie nutzen eine eingebettete H2-DB).
+# ============================================================================
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: springai
+      POSTGRES_USER: springai
+      POSTGRES_PASSWORD: springai
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U springai -d springai"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

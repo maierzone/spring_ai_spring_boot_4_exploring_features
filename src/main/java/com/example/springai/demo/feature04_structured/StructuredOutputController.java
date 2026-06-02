@@ -2,6 +2,8 @@ package com.example.springai.demo.feature04_structured;
 
 import java.util.List;
 
+import com.example.springai.demo.feature04_structured.TicketRepository.CategoryCount;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,9 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class StructuredOutputController {
 
     private final ChatClient chatClient;
+    private final TicketRepository ticketRepository;
 
-    public StructuredOutputController(ChatClient.Builder builder) {
+    public StructuredOutputController(ChatClient.Builder builder, TicketRepository ticketRepository) {
         this.chatClient = builder.build();
+        this.ticketRepository = ticketRepository;
     }
 
     /**
@@ -80,12 +84,26 @@ public class StructuredOutputController {
 
     @PostMapping("/api/tickets/analyze")
     public TicketAnalysis analyzeTicket(@RequestBody String ticketText) {
-        return chatClient.prompt()
+        TicketAnalysis analysis = chatClient.prompt()
                 .user(u -> u.text("Analysiere das folgende Support-Ticket und fuelle die "
                         + "Felder aus:\n\n{ticket}").param("ticket", ticketText))
                 // Das Ergebnis wird direkt in den typisierten Record geparst –
                 // inklusive Mapping der Strings auf die Enum-Konstanten.
                 .call()
                 .entity(TicketAnalysis.class);
+        // Feature E: die typisierte Analyse landet in PostgreSQL und ist damit
+        // auswertbar (siehe /api/tickets/stats).
+        ticketRepository.save(analysis, ticketText);
+        return analysis;
+    }
+
+    /**
+     * Analytics-Endpunkt: liefert die Anzahl der bisher analysierten Tickets je
+     * Kategorie (SQL {@code GROUP BY}). Zeigt, wie aus persistierter KI-Extraktion
+     * unmittelbar Geschaeftskennzahlen werden.
+     */
+    @GetMapping("/api/tickets/stats")
+    public List<CategoryCount> ticketStats() {
+        return ticketRepository.countByCategory();
     }
 }

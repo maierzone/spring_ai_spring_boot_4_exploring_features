@@ -4,7 +4,7 @@ import com.example.springai.demo.embedding.HashingEmbeddingModel;
 import com.example.springai.demo.feature07_rag.KnowledgeLoader;
 
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.ChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
@@ -31,17 +31,24 @@ public class DemoBeans {
     }
 
     /**
-     * Gesprächsspeicher für die Chat-Memory-Demo.
+     * Gesprächsspeicher für die Chat-Memory-Demo (Feature 5 / Feature B).
      *
      * <p>{@link MessageWindowChatMemory} hält pro Konversations-ID die letzten N
-     * Nachrichten (gleitendes Fenster) und legt sie hier in einem reinen
-     * In-Memory-Repository ab. In Produktion könnte man stattdessen ein
-     * JDBC-/Cassandra-Repository hinterlegen, ohne den übrigen Code zu ändern.</p>
+     * Nachrichten (gleitendes Fenster). Das eigentliche Speichern übernimmt das
+     * injizierte {@link ChatMemoryRepository}: In der App ist das ein vom
+     * {@code spring-ai-starter-model-chat-memory-repository-jdbc} autokonfiguriertes
+     * {@code JdbcChatMemoryRepository} (PostgreSQL) – der Gesprächsverlauf
+     * <em>überlebt damit einen Neustart</em>. In den Tests greift dasselbe
+     * Repository auf eine eingebettete H2-DB zu.</p>
+     *
+     * <p>Genau das ist der Clou des austauschbaren {@code ChatMemoryRepository}:
+     * vom flüchtigen In-Memory- auf einen persistenten JDBC-Speicher umzustellen,
+     * ohne den übrigen Code anzufassen.</p>
      */
     @Bean
-    public ChatMemory chatMemory() {
+    public ChatMemory chatMemory(ChatMemoryRepository chatMemoryRepository) {
         return MessageWindowChatMemory.builder()
-                .chatMemoryRepository(new InMemoryChatMemoryRepository())
+                .chatMemoryRepository(chatMemoryRepository)
                 .maxMessages(20)
                 .build();
     }

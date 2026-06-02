@@ -9,6 +9,7 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 | Java | 21 |
 | Spring Boot | 4.0.6 |
 | Spring AI | 2.0.0-M8 (erste Boot-4-Linie, auf Maven Central) |
+| Datenbank | PostgreSQL 17 (via Docker Compose, auto-gestartet) |
 | Build | Maven |
 
 ## Die Top-10-Features
@@ -18,13 +19,36 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 | 1 | **ChatClient** – Kern-API für Chat | `GET /api/chat?message=…` | `feature01_chatclient` |
 | 2 | **Streaming** – Antwort als Token-Strom (SSE) | `GET /api/stream?message=…` | `feature02_streaming` |
 | 3 | **Prompt Templates** – Prompts mit Platzhaltern | `GET /api/joke?topic=…&language=…` | `feature03_prompttemplate` |
-| 4 | **Structured Output** – Antwort als Java-Record | `GET /api/recipe?dish=…` · `POST /api/tickets/analyze` (Klassifikation) | `feature04_structured` |
-| 5 | **Chat Memory** – mehrstufige Konversation | `POST /api/memory/{conversationId}?message=…` | `feature05_memory` |
+| 4 | **Structured Output** – Antwort als Java-Record | `GET /api/recipe?dish=…` · `POST /api/tickets/analyze` (Klassifikation, **wird in PostgreSQL persistiert**) · `GET /api/tickets/stats` (Analytics) | `feature04_structured` |
+| 5 | **Chat Memory** – mehrstufige Konversation (**persistent in PostgreSQL**) | `POST /api/memory/{conversationId}?message=…` | `feature05_memory` |
 | 6 | **Tool Calling** – Modell ruft Java-Methoden auf | `GET /api/tools?message=…` (Produktkatalog-Service) | `feature06_tools` |
 | 7 | **RAG** – Wissen aus Vektorspeicher | `GET /api/rag?question=…` · `GET /api/rag/sources?question=…` (Quellen) | `feature07_rag` |
 | 8 | **Embeddings** – Text→Vektor, Ähnlichkeit | `GET /api/embeddings/similarity?text1=…&text2=…` | `feature08_embeddings` |
 | 9 | **Multimodalität** – Text + Bild | `POST /api/multimodal` (multipart: `image`, `message`) | `feature09_multimodal` |
 | 10 | **Advisors** – Interzeptoren (eigener Metrics-Advisor, Logging, Guardrail) | `GET /api/advisors?message=…` | `feature10_advisors` |
+
+### Datenbank-Features (PostgreSQL via Docker)
+
+Die zuvor rein In-Memory umgesetzten Bereiche sind jetzt an eine echte
+**PostgreSQL**-Datenbank angebunden – ohne manuelles Setup:
+
+- **Docker-Compose-Auto-Start:** Dank `spring-boot-docker-compose` erkennt Spring
+  Boot 4 die `compose.yaml` im Projektwurzelverzeichnis, startet beim
+  `mvn spring-boot:run` selbstständig einen Postgres-Container und verdrahtet die
+  `DataSource` automatisch (beim Beenden wird der Container gestoppt). Einzige
+  Voraussetzung: eine laufende Docker-Engine.
+- **Persistentes Chat-Memory (Feature 5/B):** Das `ChatMemory` legt den
+  Gesprächsverlauf nun über ein autokonfiguriertes `JdbcChatMemoryRepository` in
+  Postgres ab – der Verlauf **überlebt einen Neustart**. Der übrige Code blieb
+  unverändert; getauscht wurde nur das `ChatMemoryRepository`.
+- **Ticket-Persistenz + Analytics (Feature 4/E):** Jede `POST /api/tickets/analyze`
+  schreibt die typisierte Analyse in eine `tickets`-Tabelle. `GET /api/tickets/stats`
+  wertet sie per SQL `GROUP BY` aus – aus KI-Extraktion werden abfragbare
+  Geschäftsdaten.
+
+Die Tests benötigen **kein Docker**: Sie laufen gegen eine eingebettete
+**H2**-Datenbank (Spring AI M8 bringt einen H2-Dialekt für das Chat-Memory-Schema
+mit), das Quality-Gate bleibt damit vollständig offline.
 
 ### Developer-Fokus (vertiefte Features)
 
@@ -65,7 +89,10 @@ curl -X POST "localhost:8080/api/tickets/analyze" \
      -H "Content-Type: text/plain" \
      -d "Nach dem letzten Update kann ich mich nicht mehr einloggen, sehr aergerlich!"
 
-# 5) Chat Memory – mehrstufiger Dialog (gleiche conversationId)
+# 4c) Ticket-Analytics – Auswertung der persistierten Tickets (SQL GROUP BY)
+curl "localhost:8080/api/tickets/stats"
+
+# 5) Chat Memory – mehrstufiger Dialog (gleiche conversationId), in Postgres persistent
 curl -X POST "localhost:8080/api/memory/anna?message=Mein+Name+ist+Anna."
 curl -X POST "localhost:8080/api/memory/anna?message=Wie+heisse+ich?"
 
@@ -94,8 +121,12 @@ curl "localhost:8080/api/advisors?message=Erklaere+kurz,+was+ein+Advisor+ist."
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-…        # echter Key für reale Modellaufrufe
-mvn spring-boot:run
+mvn spring-boot:run                      # startet automatisch den Postgres-Container
 ```
+
+> **Voraussetzung:** Eine laufende **Docker-Engine** – Spring Boot startet den in
+> `compose.yaml` definierten PostgreSQL-Container selbst. Ohne Docker schlägt der
+> App-Start fehl (die Tests benötigen Docker hingegen nicht, siehe unten).
 
 Ohne Key starten die Endpunkte zwar, ein echter Modellaufruf schlägt aber mit
 HTTP 401 fehl. Die Features 7 und 8 (RAG/Embeddings) funktionieren dank des
