@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
  * Servlet-Filtern. Die zuvor gezeigten Chat-Memory- und RAG-Features sind selbst
  * als Advisors umgesetzt. Hier kombinieren wir zwei eingebaute Advisors:</p>
  * <ul>
+ *   <li>{@link MetricsLoggingAdvisor}: <b>selbst geschrieben</b> – misst Latenz
+ *       und Token-Verbrauch (zeigt, wie man das Erweiterungskonzept nutzt).</li>
  *   <li>{@link SimpleLoggerAdvisor}: protokolliert Anfrage und Antwort (Debugging).</li>
  *   <li>{@link SafeGuardAdvisor}: blockt Anfragen mit unerwünschten Begriffen ab,
  *       bevor sie überhaupt ans Modell gehen (einfacher Guardrail).</li>
@@ -33,6 +35,7 @@ public class AdvisorController {
     public AdvisorController(ChatClient.Builder builder) {
         this.chatClient = builder
                 .defaultAdvisors(
+                        new MetricsLoggingAdvisor(),
                         new SimpleLoggerAdvisor(),
                         // Beispielhafte Sperrliste; in echt käme sie aus der Konfiguration.
                         SafeGuardAdvisor.builder()

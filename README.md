@@ -24,7 +24,7 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 | 7 | **RAG** – Wissen aus Vektorspeicher | `GET /api/rag?question=…` · `GET /api/rag/sources?question=…` (Quellen) | `feature07_rag` |
 | 8 | **Embeddings** – Text→Vektor, Ähnlichkeit | `GET /api/embeddings/similarity?text1=…&text2=…` | `feature08_embeddings` |
 | 9 | **Multimodalität** – Text + Bild | `POST /api/multimodal` (multipart: `image`, `message`) | `feature09_multimodal` |
-| 10 | **Advisors** – Interzeptoren (Logging, Guardrail) | `GET /api/advisors?message=…` | `feature10_advisors` |
+| 10 | **Advisors** – Interzeptoren (eigener Metrics-Advisor, Logging, Guardrail) | `GET /api/advisors?message=…` | `feature10_advisors` |
 
 ### Developer-Fokus (vertiefte Features)
 
@@ -38,6 +38,57 @@ Die für Backend-Entwickler wertvollsten Features sind praxisnah ausgebaut:
 - **RAG** lädt sein Wissen aus einer Ressourcen-Datei (`knowledge/spring-ai-faq.md`,
   ein Absatz = ein Dokument) und bietet einen Transparenz-Endpunkt
   (`/api/rag/sources`), der die abgerufenen Quellen samt Score zeigt – ohne LLM/Key.
+- **Advisors**: ein selbst geschriebener `MetricsLoggingAdvisor` (implementiert
+  `CallAdvisor`) misst Latenz + Token-Verbrauch und legt sie in den Antwort-Kontext
+  – das demonstriert das Erweiterungskonzept, auf dem auch Memory und RAG basieren.
+
+## Beispiel-Requests (curl)
+
+Server vorausgesetzt unter `http://localhost:8080`. Endpunkte ohne LLM-Aufruf
+(`/api/embeddings*`, `/api/rag/sources`) funktionieren auch ohne API-Key.
+
+```bash
+# 1) ChatClient
+curl "localhost:8080/api/chat?message=Erklaere+Spring+AI+in+einem+Satz"
+
+# 2) Streaming (Server-Sent-Events)
+curl -N "localhost:8080/api/stream?message=Zaehle+von+1+bis+5"
+
+# 3) Prompt Template
+curl "localhost:8080/api/joke?topic=Katzen&language=Englisch"
+
+# 4) Structured Output – Rezept als JSON-Record
+curl "localhost:8080/api/recipe?dish=Pfannkuchen"
+
+# 4b) Structured Output – Ticket-Klassifikation (Freitext -> typisiertes JSON)
+curl -X POST "localhost:8080/api/tickets/analyze" \
+     -H "Content-Type: text/plain" \
+     -d "Nach dem letzten Update kann ich mich nicht mehr einloggen, sehr aergerlich!"
+
+# 5) Chat Memory – mehrstufiger Dialog (gleiche conversationId)
+curl -X POST "localhost:8080/api/memory/anna?message=Mein+Name+ist+Anna."
+curl -X POST "localhost:8080/api/memory/anna?message=Wie+heisse+ich?"
+
+# 6) Tool Calling – Modell ruft den Produktkatalog-Service auf
+curl "localhost:8080/api/tools?message=Wie+viele+Monitore+sind+auf+Lager?"
+
+# 7) RAG – Antwort auf Basis des Wissensspeichers
+curl "localhost:8080/api/rag?question=Was+ist+RAG?"
+
+# 7b) RAG-Transparenz – welche Quellen liefert die Suche? (ohne API-Key)
+curl "localhost:8080/api/rag/sources?question=Was+ist+Tool+Calling?&topK=2"
+
+# 8) Embeddings – Kosinus-Aehnlichkeit zweier Texte (ohne API-Key)
+curl "localhost:8080/api/embeddings/similarity?text1=Hund&text2=Katze"
+
+# 9) Multimodalitaet – Bild + Frage (vision-faehiges Claude-Modell noetig)
+curl -X POST "localhost:8080/api/multimodal" \
+     -F "image=@bild.png" \
+     -F "message=Was ist auf diesem Bild zu sehen?"
+
+# 10) Advisors – Guardrail + eigener Metrics-Advisor (siehe Server-Log fuer Latenz/Tokens)
+curl "localhost:8080/api/advisors?message=Erklaere+kurz,+was+ein+Advisor+ist."
+```
 
 ## Starten
 
