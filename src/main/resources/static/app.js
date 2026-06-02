@@ -122,12 +122,25 @@ function renderSentimentGauge(sentiment) {
     <path d="${arc(180, 120, r)}" stroke="${SENTIMENT.NEGATIVE.color}" stroke-width="14" fill="none" stroke-linecap="round"/>
     <path d="${arc(120, 60, r)}"  stroke="${SENTIMENT.NEUTRAL.color}"  stroke-width="14" fill="none"/>
     <path d="${arc(60, 0, r)}"    stroke="${SENTIMENT.POSITIVE.color}" stroke-width="14" fill="none" stroke-linecap="round"/>`;
-  // Nadel.
-  const tip = polar(s.angle, r - 6);
-  const needle = `<line x1="80" y1="80" x2="${tip.x}" y2="${tip.y}" stroke="${s.color}" stroke-width="3"/>
-    <circle cx="80" cy="80" r="5" fill="${s.color}"/>`;
+  // Nadel als Gruppe – senkrecht nach oben gezeichnet (= Neutral), wird dann per
+  // CSS-Transform in die Zielposition gedreht (animiertes Einschwingen).
+  const needle = `<g class="needle">
+      <line x1="80" y1="80" x2="80" y2="${80 - (r - 6)}" stroke="${s.color}" stroke-width="3"/>
+      <circle cx="80" cy="80" r="5" fill="${s.color}"/>
+    </g>`;
 
-  document.getElementById("sentimentGauge").innerHTML = zones + needle;
+  const svg = document.getElementById("sentimentGauge");
+  svg.innerHTML = zones + needle;
+
+  // Positiver Drehwinkel = im Uhrzeigersinn. Oben (=Neutral) entspricht 90°.
+  const rotation = 90 - s.angle;
+  const group = svg.querySelector(".needle");
+  group.style.transform = "rotate(0deg)";
+  // Im nächsten Frame auf den Zielwinkel setzen, damit die CSS-Transition greift.
+  requestAnimationFrame(() => {
+    group.style.transform = `rotate(${rotation}deg)`;
+  });
+
   const label = document.getElementById("sentimentLabel");
   label.textContent = sentiment;
   label.style.color = s.color;
