@@ -18,13 +18,26 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 | 1 | **ChatClient** – Kern-API für Chat | `GET /api/chat?message=…` | `feature01_chatclient` |
 | 2 | **Streaming** – Antwort als Token-Strom (SSE) | `GET /api/stream?message=…` | `feature02_streaming` |
 | 3 | **Prompt Templates** – Prompts mit Platzhaltern | `GET /api/joke?topic=…&language=…` | `feature03_prompttemplate` |
-| 4 | **Structured Output** – Antwort als Java-Record | `GET /api/recipe?dish=…` | `feature04_structured` |
+| 4 | **Structured Output** – Antwort als Java-Record | `GET /api/recipe?dish=…` · `POST /api/tickets/analyze` (Klassifikation) | `feature04_structured` |
 | 5 | **Chat Memory** – mehrstufige Konversation | `POST /api/memory/{conversationId}?message=…` | `feature05_memory` |
-| 6 | **Tool Calling** – Modell ruft Java-Methoden auf | `GET /api/tools?message=…` | `feature06_tools` |
-| 7 | **RAG** – Wissen aus Vektorspeicher | `GET /api/rag?question=…` | `feature07_rag` |
+| 6 | **Tool Calling** – Modell ruft Java-Methoden auf | `GET /api/tools?message=…` (Produktkatalog-Service) | `feature06_tools` |
+| 7 | **RAG** – Wissen aus Vektorspeicher | `GET /api/rag?question=…` · `GET /api/rag/sources?question=…` (Quellen) | `feature07_rag` |
 | 8 | **Embeddings** – Text→Vektor, Ähnlichkeit | `GET /api/embeddings/similarity?text1=…&text2=…` | `feature08_embeddings` |
 | 9 | **Multimodalität** – Text + Bild | `POST /api/multimodal` (multipart: `image`, `message`) | `feature09_multimodal` |
 | 10 | **Advisors** – Interzeptoren (Logging, Guardrail) | `GET /api/advisors?message=…` | `feature10_advisors` |
+
+### Developer-Fokus (vertiefte Features)
+
+Die für Backend-Entwickler wertvollsten Features sind praxisnah ausgebaut:
+
+- **Structured Output** zusätzlich als *Klassifikation/Extraktion*: ein frei
+  formuliertes Support-Ticket wird in einen typisierten Record mit Enums
+  (`Category`, `Priority`, `Sentiment`) überführt – direkt routing-/persistierbar.
+- **Tool Calling** nach dem realen Muster: die Tools sind dünne Fassaden vor einem
+  per DI injizierten Fach-Service (`ProductCatalogService`), nicht Wegwerf-Methoden.
+- **RAG** lädt sein Wissen aus einer Ressourcen-Datei (`knowledge/spring-ai-faq.md`,
+  ein Absatz = ein Dokument) und bietet einen Transparenz-Endpunkt
+  (`/api/rag/sources`), der die abgerufenen Quellen samt Score zeigt – ohne LLM/Key.
 
 ## Starten
 

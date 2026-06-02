@@ -20,17 +20,25 @@ import org.springframework.web.bind.annotation.RestController;
 public class ToolCallingController {
 
     private final ChatClient chatClient;
+    private final ProductTools productTools;
 
-    public ToolCallingController(ChatClient.Builder builder) {
+    /**
+     * {@link ProductTools} kommt per DI aus dem Spring-Kontext (kapselt einen
+     * Fach-Service). {@link DateTimeTools} hat keinen Zustand und wird einfach
+     * direkt instanziiert.
+     */
+    public ToolCallingController(ChatClient.Builder builder, ProductTools productTools) {
         this.chatClient = builder.build();
+        this.productTools = productTools;
     }
 
     @GetMapping("/api/tools")
-    public String ask(@RequestParam(defaultValue = "Wie spaet ist es gerade?") String message) {
+    public String ask(@RequestParam(defaultValue = "Wie viele Monitore sind auf Lager?") String message) {
         return chatClient.prompt()
                 .user(message)
-                // tools(...) registriert die Werkzeug-Instanz nur für diese Anfrage.
-                .tools(new DateTimeTools())
+                // Beide Werkzeug-Sammlungen für diese Anfrage anbieten. Das Modell
+                // wählt selbst aus, welches Tool (falls überhaupt) es aufruft.
+                .tools(productTools, new DateTimeTools())
                 .call()
                 .content();
     }

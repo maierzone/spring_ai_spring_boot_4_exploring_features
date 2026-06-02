@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -43,5 +45,47 @@ public class StructuredOutputController {
                 // JSON-Antwort des Modells direkt in einen Recipe-Record.
                 .call()
                 .entity(Recipe.class);
+    }
+
+    // ------------------------------------------------------------------------
+    // Praxisnaher Developer-Use-Case: Klassifikation/Extraktion.
+    // ------------------------------------------------------------------------
+    // Der wohl häufigste produktive Einsatz von Structured Output ist nicht das
+    // Generieren von Inhalten, sondern das *Strukturieren von unstrukturiertem
+    // Input*: aus einem frei formulierten Support-Ticket eine typisierte,
+    // weiterverarbeitbare Analyse machen (Kategorie, Priorität, Sentiment, ...).
+    // Durch die Enums ist die Ausgabe auf gültige Werte beschränkt – das
+    // resultierende Objekt lässt sich direkt in einem Switch oder einer
+    // Routing-Logik verwenden, ohne String-Vergleiche.
+
+    /** Fachliche Kategorie eines Tickets. Enums erzwingen ein geschlossenes Werteset. */
+    public enum Category { BUG, FEATURE_REQUEST, QUESTION, BILLING, OTHER }
+
+    /** Dringlichkeit – steuert z.B. das Routing/SLA. */
+    public enum Priority { LOW, MEDIUM, HIGH, URGENT }
+
+    /** Erkannte Stimmung des Kunden. */
+    public enum Sentiment { POSITIVE, NEUTRAL, NEGATIVE }
+
+    /**
+     * Zielstruktur der Analyse. Aus diesem Record samt Enums leitet Spring AI das
+     * JSON-Schema ab, an das sich das Modell halten soll.
+     */
+    public record TicketAnalysis(
+            Category category,
+            Priority priority,
+            Sentiment customerSentiment,
+            String summary) {
+    }
+
+    @PostMapping("/api/tickets/analyze")
+    public TicketAnalysis analyzeTicket(@RequestBody String ticketText) {
+        return chatClient.prompt()
+                .user(u -> u.text("Analysiere das folgende Support-Ticket und fuelle die "
+                        + "Felder aus:\n\n{ticket}").param("ticket", ticketText))
+                // Das Ergebnis wird direkt in den typisierten Record geparst –
+                // inklusive Mapping der Strings auf die Enum-Konstanten.
+                .call()
+                .entity(TicketAnalysis.class);
     }
 }

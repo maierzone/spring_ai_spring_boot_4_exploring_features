@@ -1,18 +1,17 @@
 package com.example.springai.demo.config;
 
-import java.util.List;
-
 import com.example.springai.demo.embedding.HashingEmbeddingModel;
+import com.example.springai.demo.feature07_rag.KnowledgeLoader;
 
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
-import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 
 /**
  * Zentrale Bean-Definitionen, die von mehreren Feature-Demos gemeinsam genutzt
@@ -58,18 +57,11 @@ public class DemoBeans {
     @Bean
     public VectorStore vectorStore(EmbeddingModel embeddingModel) {
         SimpleVectorStore store = SimpleVectorStore.builder(embeddingModel).build();
-        store.add(List.of(
-                new Document("Spring AI ist ein Framework, das die Integration von "
-                        + "KI-Modellen in Spring-Anwendungen vereinfacht."),
-                new Document("Der ChatClient ist die zentrale, fluent API von Spring AI, "
-                        + "um Prompts an ein Chat-Modell zu senden und Antworten zu erhalten."),
-                new Document("Mit Advisors lassen sich wiederkehrende Aspekte wie Chat-Memory, "
-                        + "RAG oder Logging als wiederverwendbare Bausteine in die Anfrage einklinken."),
-                new Document("RAG (Retrieval Augmented Generation) reichert den Prompt mit "
-                        + "relevanten Dokumenten aus einem Vektorspeicher an, bevor er ans Modell geht."),
-                new Document("Tool Calling erlaubt es dem Modell, annotierte Java-Methoden "
-                        + "aufzurufen, um an aktuelle oder externe Daten zu gelangen.")
-        ));
+        // Wissen wird aus einer Ressourcen-Datei geladen und in Absätze zerlegt
+        // (siehe KnowledgeLoader). So liegt der "Content" außerhalb des Codes und
+        // kann ohne Neukompilierung gepflegt werden.
+        store.add(KnowledgeLoader.loadParagraphs(
+                new ClassPathResource("knowledge/spring-ai-faq.md")));
         return store;
     }
 }
