@@ -74,6 +74,36 @@
         </dependency>
 
         <!-- ====================================================================
+             Handbuch-Features (vertiefte Spring-AI-Themen)
+             ====================================================================
+             Feature 11 (MCP), 12 (Observability), 13 (Evaluation). -->
+
+        <!-- MCP-Server (WebMVC/SSE-Transport): veroeffentlicht die im Kontext
+             vorhandenen Tools (ToolCallbackProvider-Beans) als Model-Context-
+             Protocol-Server, den externe Clients (z.B. Claude Desktop, andere
+             Agenten) ansprechen koennen. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
+        </dependency>
+
+        <!-- MCP-Client: kann externe MCP-Server anbinden und deren Tools als
+             ToolCallbacks verfuegbar machen. Ohne konfigurierte Server bleibt er
+             inert (keine Verbindung, keine Tools) - daher CI-sicher. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-mcp-client</artifactId>
+        </dependency>
+
+        <!-- Observability: Actuator bringt Micrometer (Metrics-Registry). Spring AI
+             erzeugt dann automatisch gen_ai-Metriken (Token-Verbrauch, Latenz) und
+             spring.ai.chat.client-Observations. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- ====================================================================
              Datenbank-Features (PostgreSQL via Docker)
              ====================================================================
              Feature B (persistentes Chat-Memory) und E (Ticket-Persistenz +
