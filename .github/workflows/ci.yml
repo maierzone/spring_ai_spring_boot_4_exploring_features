@@ -1,0 +1,48 @@
+# ============================================================================
+# Quality-Gate fuer die Spring-AI-Demo
+# ----------------------------------------------------------------------------
+# Baut das Projekt und fuehrt die komplette Testsuite aus (mvn verify).
+# Die Tests laufen vollstaendig offline und benoetigen KEINEN API-Key, daher
+# sind keine Secrets noetig. workflow_dispatch erlaubt das manuelle/automatische
+# Anstossen des Laufs (z.B. ueber die GitHub-Actions-API).
+# ============================================================================
+name: CI
+
+on:
+  push:
+    branches:
+      - "claude/**"
+      - main
+  pull_request:
+  workflow_dispatch:
+
+# Aeltere Laeufe desselben Branches abbrechen, sobald ein neuer startet.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test (JDK 21)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build & verify
+        run: mvn -B -ntp verify
+
+      - name: Upload JAR artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: spring-ai-demo-jar
+          path: target/*.jar
+          if-no-files-found: ignore
