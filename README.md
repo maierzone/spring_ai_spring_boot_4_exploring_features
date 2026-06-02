@@ -101,6 +101,23 @@ Ohne Key starten die Endpunkte zwar, ein echter Modellaufruf schlägt aber mit
 HTTP 401 fehl. Die Features 7 und 8 (RAG/Embeddings) funktionieren dank des
 eingebauten Offline-Embeddings teilweise auch ohne Key.
 
+## Web-UI / Developer-Konsole
+
+Nach dem Start ist unter **`http://localhost:8080`** eine schlanke, statische
+Web-Konsole (`src/main/resources/static`) erreichbar. Sie triggert die
+Backend-Endpunkte der Developer-Features direkt aus dem Browser – kein `curl`
+nötig:
+
+- **Structured Output (Feature 4):** Support-Ticket eingeben → das typisierte
+  Ergebnis wird **grafisch** ausgewertet: Kategorie als farbiges Badge, Priorität
+  als Segment-Leiste, Sentiment als SVG-Gauge mit Nadel, plus Zusammenfassung.
+- **Tool Calling (Feature 6):** Frage an den Produktkatalog stellen.
+- **RAG (Feature 7):** Antwort generieren **oder** „Nur Quellen zeigen" – Letzteres
+  funktioniert ohne API-Key und zeigt die abgerufenen Dokumente samt Score.
+
+Die Visualisierung kommt ganz ohne externe Chart-Bibliothek aus (reines SVG/CSS)
+und ist damit voll offline.
+
 ## Tests / Quality-Gate
 
 ```bash
