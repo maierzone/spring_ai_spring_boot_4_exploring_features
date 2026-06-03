@@ -34,6 +34,7 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 | 11 | **MCP** – Model Context Protocol (Server **und** Client) | MCP-SSE-Endpunkt (Server) · `GET /api/mcp/client/tools` · `GET /api/mcp/client/ask?message=…` | `feature11_mcp` |
 | 12 | **Observability** – Micrometer-Metriken (Tokens/Latenz) | `GET /api/observability/ask?message=…` · `GET /api/observability/metrics` · `/actuator/metrics` | `feature12_observability` |
 | 13 | **Evaluation** – LLM-as-a-Judge gegen Halluzinationen | `GET /api/evaluate/relevancy?question=…&context=…&answer=…` | `feature13_evaluation` |
+| 17 | **pgvector** – persistenter VectorStore (PostgreSQL) | `GET /api/pgvector/search?query=…&category=…` · `POST /api/pgvector/documents?text=…&category=…` · `GET /api/pgvector/info` | `feature17_pgvector` |
 
 Ausführliche Erläuterung dieser drei Themenblöcke (Konzept, Code, Konfiguration,
 Fallstricke) im Handbuch: **[`docs/HANDBUCH.md`](docs/HANDBUCH.md)**.
@@ -68,6 +69,13 @@ Die zuvor rein In-Memory umgesetzten Bereiche sind jetzt an eine echte
   schreibt die typisierte Analyse in eine `tickets`-Tabelle. `GET /api/tickets/stats`
   wertet sie per SQL `GROUP BY` aus – aus KI-Extraktion werden abfragbare
   Geschäftsdaten.
+- **Persistenter VectorStore via pgvector (Feature 17):** In der Standardlaufzeit
+  (Profil `pgvector`) tritt der In-Memory-`SimpleVectorStore` der RAG-Demo zugunsten
+  eines `PgVectorStore` zurück – Embeddings liegen damit in PostgreSQL und
+  **überleben einen Neustart**, inkl. DB-seitigem Metadaten-Filter. Dafür nutzt
+  `compose.yaml` das Image `pgvector/pgvector:pg17` (statt `postgres:17`). Wieder
+  wird nur die Bean getauscht, der RAG-Code bleibt unverändert. Die Tests bleiben
+  über `@ActiveProfiles("test")` offline auf dem `SimpleVectorStore` (H2).
 
 Die Tests benötigen **kein Docker**: Sie laufen gegen eine eingebettete
 **H2**-Datenbank (Spring AI M8 bringt einen H2-Dialekt für das Chat-Memory-Schema
@@ -152,6 +160,13 @@ curl -G "localhost:8080/api/evaluate/relevancy" \
      --data-urlencode "question=Was ist RAG?" \
      --data-urlencode "context=RAG kombiniert Retrieval mit Generation." \
      --data-urlencode "answer=RAG ruft passende Dokumente ab und nutzt sie als Kontext."
+
+# 17) pgvector – Dokument persistieren und mit Metadaten-Filter suchen (ohne API-Key)
+curl "localhost:8080/api/pgvector/info"          # aktive VectorStore-Implementierung
+curl -X POST "localhost:8080/api/pgvector/documents?text=Spring+AI+vereinfacht+RAG&category=spring"
+curl -G "localhost:8080/api/pgvector/search" \
+     --data-urlencode "query=Wie greife ich auf ein LLM zu?" \
+     --data-urlencode "category=spring"
 ```
 
 ## Starten

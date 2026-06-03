@@ -1,6 +1,6 @@
 # Spring AI – Vertieftes Handbuch (Boot 4 / Spring AI 2.0.0-M-Linie)
 
-Dieses Handbuch geht über die „Top 10" der README hinaus und behandelt drei
+Dieses Handbuch geht über die „Top 10" der README hinaus und behandelt vier
 Themenblöcke, die in produktiven Spring-AI-Anwendungen den Unterschied zwischen
 „Prototyp" und „betreibbar" ausmachen:
 
@@ -9,6 +9,7 @@ Themenblöcke, die in produktiven Spring-AI-Anwendungen den Unterschied zwischen
 | 11 | **MCP** – Model Context Protocol (Server **und** Client) | `feature11_mcp` | MCP-SSE-Endpunkt · `GET /api/mcp/client/tools` · `GET /api/mcp/client/ask` |
 | 12 | **Observability** – Micrometer-Metriken & Tracing | `feature12_observability` | `GET /api/observability/ask` · `GET /api/observability/metrics` |
 | 13 | **Evaluation** – LLM-as-a-Judge gegen Halluzinationen | `feature13_evaluation` | `GET /api/evaluate/relevancy` |
+| 17 | **pgvector** – persistenter VectorStore (PostgreSQL) | `feature17_pgvector` | `GET /api/pgvector/info` · `POST /api/pgvector/documents` · `GET /api/pgvector/search` |
 
 Schreibstil: praxisnah für Backend-Entwickler – kurzes Konzept, dann Code,
 Konfiguration, `curl`-Beispiele und die Fallstricke, die in der Praxis weh tun.
@@ -298,6 +299,100 @@ laufen und der Test als **Eval-Gate** über einem Golden-Dataset wachen.
 
 ---
 
+## Feature 17 – pgvector (persistenter VectorStore)
+
+### Worum geht es?
+
+Die RAG-Demo (Feature 7) nutzt einen `SimpleVectorStore`: Embeddings liegen rein
+im Arbeitsspeicher und sind nach einem Neustart verloren. Für „betreibbar" braucht
+es einen persistenten Speicher. **pgvector** ist die PostgreSQL-Extension für
+Vektor-Ähnlichkeitssuche; Spring AI bindet sie über den `PgVectorStore` an dasselbe
+`VectorStore`-Interface an. Der Clou ist derselbe wie beim Chat-Memory (Feature 5):
+**nur die Bean wird getauscht, der Anwendungscode bleibt unverändert.**
+
+### Profil-Switch statt Code-Umbau
+
+Beide Implementierungen erfüllen das `VectorStore`-Interface. Welche aktiv ist,
+entscheidet das Spring-Profil:
+
+```java
+// config/DemoBeans.java
+@Bean
+@Profile("!pgvector")                       // entfällt in der Standardlaufzeit
+public VectorStore vectorStore(EmbeddingModel embeddingModel) {
+    SimpleVectorStore store = SimpleVectorStore.builder(embeddingModel).build();
+    store.add(KnowledgeLoader.loadParagraphs(faq));
+    return store;
+}
+```
+
+- **Standardlaufzeit** (`spring.profiles.active=pgvector` in `application.properties`):
+  Die obige Bean entfällt. Die Spring-AI-Autokonfiguration ist
+  `@ConditionalOnMissingBean(VectorStore.class)` und steuert nun den `PgVectorStore`
+  bei – verdrahtet auf die ohnehin laufende PostgreSQL.
+- **Tests** (`@ActiveProfiles("test")`): Der offline `SimpleVectorStore` (H2) bleibt
+  aktiv; die pgvector-Autokonfiguration ist im `test`-Profil ausgeschlossen (siehe
+  Fallstricke). So bleibt das Quality-Gate ohne Docker grün.
+
+### Konfiguration
+
+`pom.xml`:
+
+```xml
+<dependency>
+    <groupId>org.springframework.ai</groupId>
+    <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
+</dependency>
+```
+
+`application-pgvector.properties` (nur im Profil `pgvector` geladen):
+
+```properties
+spring.ai.vectorstore.pgvector.initialize-schema=true   # Extension + Tabelle + Index anlegen
+spring.ai.vectorstore.pgvector.dimensions=256           # == HashingEmbeddingModel
+spring.ai.vectorstore.pgvector.index-type=HNSW
+spring.ai.vectorstore.pgvector.distance-type=COSINE_DISTANCE
+```
+
+`compose.yaml`: Das Image wechselt von `postgres:17` auf `pgvector/pgvector:pg17`
+(funktional identisch, bringt aber die Extension `vector` mit). Chat-Memory und die
+eGK-Tabellen laufen auf demselben Container unverändert weiter.
+
+### Was der Endpunkt zeigt
+
+```bash
+# Welche VectorStore-Implementierung ist aktiv? (PgVectorStore zur Laufzeit)
+curl "localhost:8080/api/pgvector/info"
+
+# Dokument mit Metadatum ablegen – persistiert in der Tabelle vector_store
+curl -X POST "localhost:8080/api/pgvector/documents?text=Spring+AI+vereinfacht+RAG&category=spring"
+
+# Ähnlichkeitssuche mit DB-seitigem Metadaten-Filter
+curl -G "localhost:8080/api/pgvector/search" \
+     --data-urlencode "query=Wie greife ich auf ein LLM zu?" \
+     --data-urlencode "category=spring"
+```
+
+Die beiden pgvector-Stärken werden damit greifbar: **Persistenz** (die abgelegten
+Dokumente überleben einen Neustart, weil sie in PostgreSQL liegen) und der
+**Metadaten-Filter** (`category == '…'`), den pgvector direkt in der Datenbank
+auswertet.
+
+### Fallstricke
+
+- **Dimension muss passen:** `pgvector.dimensions` muss exakt der Ausgabe des
+  `EmbeddingModel` entsprechen (hier 256). Weicht sie ab, scheitert das Einfügen.
+- **Extension braucht das richtige Image:** Das offizielle `postgres`-Image kennt
+  `CREATE EXTENSION vector` nicht – daher `pgvector/pgvector`.
+- **Bean-Namens-Kollision in Tests:** Die pgvector-Autokonfiguration steuert
+  ebenfalls eine Bean namens `vectorStore` bei. Liegt sie im Test-Classpath neben
+  der eigenen `DemoBeans`-Bean, scheitert der Kontext mit
+  `BeanDefinitionOverrideException` (Override ist in Boot deaktiviert). Lösung:
+  im `test`-Profil ausschließen –
+  `spring.autoconfigure.exclude=…pgvector.autoconfigure.PgVectorStoreAutoConfiguration`.
+
+---
+
 ## Ausblick – weitere lohnende Spring-AI-Themen
 
 Kandidaten für eine nächste Ausbaustufe dieses Handbuchs:
@@ -307,9 +402,6 @@ Kandidaten für eine nächste Ausbaustufe dieses Handbuchs:
 - **Agentic Workflows / rekursive Advisors:** Chaining, Routing und
   Evaluator-Optimizer-Muster; ein Advisor ruft andere Advisors in mehrstufigen
   Abläufen auf (u. a. Grundlage für LLM-as-a-Judge im Loop).
-- **Echter Vektorspeicher (pgvector):** das In-Memory-`SimpleVectorStore` der
-  RAG-Demo gegen `spring-ai-starter-vector-store-pgvector` tauschen (passt zur
-  bereits laufenden Postgres-Instanz).
 - **ETL-/Document-Pipeline:** `DocumentReader`/`TokenTextSplitter`/
   `MetadataEnricher` für das Befüllen des Vektorspeichers aus PDFs/HTML.
 - **Moderation & Guardrails:** Moderation-API und PII-/Safety-Advisors über die
