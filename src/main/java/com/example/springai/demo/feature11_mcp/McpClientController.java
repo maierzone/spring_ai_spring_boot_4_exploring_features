@@ -69,8 +69,7 @@ public class McpClientController {
         ToolCallback[] remoteTools = new SyncMcpToolCallbackProvider(mcpClients).getToolCallbacks();
         return chatClientBuilder.build()
                 .prompt()
-                .user(message)
-                .toolCallbacks(remoteTools)
+                .user(message).tools(remoteTools)
                 .call()
                 .content();
     }

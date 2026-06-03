@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * Einstiegspunkt der Spring-AI-Demo.
  *
- * <p>Die Anwendung demonstriert die "Top 10" Spring-AI-Features jeweils als
+ * <p>Die Anwendung demonstriert die "Top X" Spring-AI-Features jeweils als
  * eigenen, ausführlich kommentierten REST-Endpunkt. Als LLM-Provider ist
  * Anthropic (Claude) konfiguriert; für die echte Nutzung muss die
  * Umgebungsvariable {@code ANTHROPIC_API_KEY} gesetzt sein.</p>

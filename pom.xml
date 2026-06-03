@@ -4,21 +4,6 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!--
-      ============================================================================
-      Spring AI Demo : Spring Boot 4 / Java 21
-      ============================================================================
-      Demonstrationsanwendung fuer die "Top 10" Spring-AI-Features.
-      LLM-Provider: Anthropic (Claude). Build-Tool: Maven.
-
-      Hinweis zu den Versionen:
-        * Spring Boot 4.0.6 ist die vom Auftraggeber gewuenschte GA-Version.
-        * Spring AI 2.0.0-M8 ist die erste Spring-AI-Linie fuer Spring Boot 4 /
-          Spring Framework 7 und liegt bereits auf Maven Central (kein
-          Milestone-Repository erforderlich).
-      ============================================================================
-    -->
-
     <!-- Spring-Boot-Parent liefert sinnvolle Defaults (Plugin-Versionen, UTF-8, JUnit5, ...) -->
     <parent>
         <groupId>org.springframework.boot</groupId>
@@ -34,15 +19,12 @@
     <description>Top-10 Spring AI Feature-Demo auf Spring Boot 4 / Java 21</description>
 
     <properties>
-        <!-- Java 21 (im Build-Environment verfügbar; Spring Boot 4 verlangt >= 17) -->
         <java.version>21</java.version>
-        <!-- Zentrale Stelle für die Spring-AI-Version -->
         <spring-ai.version>2.0.0-M8</spring-ai.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring-AI-BOM: hält alle Spring-AI-Module auf einer konsistenten Version -->
             <dependency>
                 <groupId>org.springframework.ai</groupId>
                 <artifactId>spring-ai-bom</artifactId>
@@ -54,7 +36,6 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Web-Layer (REST-Controller) für die Feature-Demos -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -73,43 +54,21 @@
             <artifactId>spring-ai-advisors-vector-store</artifactId>
         </dependency>
 
-        <!-- ====================================================================
-             Handbuch-Features (vertiefte Spring-AI-Themen)
-             ====================================================================
-             Feature 11 (MCP), 12 (Observability), 13 (Evaluation). -->
-
-        <!-- MCP-Server (WebMVC/SSE-Transport): veroeffentlicht die im Kontext
-             vorhandenen Tools (ToolCallbackProvider-Beans) als Model-Context-
-             Protocol-Server, den externe Clients (z.B. Claude Desktop, andere
-             Agenten) ansprechen koennen. -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-mcp-server-webmvc</artifactId>
         </dependency>
 
-        <!-- MCP-Client: kann externe MCP-Server anbinden und deren Tools als
-             ToolCallbacks verfuegbar machen. Ohne konfigurierte Server bleibt er
-             inert (keine Verbindung, keine Tools) - daher CI-sicher. -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-starter-mcp-client</artifactId>
         </dependency>
 
-        <!-- Observability: Actuator bringt Micrometer (Metrics-Registry). Spring AI
-             erzeugt dann automatisch gen_ai-Metriken (Token-Verbrauch, Latenz) und
-             spring.ai.chat.client-Observations. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- ====================================================================
-             Datenbank-Features (PostgreSQL via Docker)
-             ====================================================================
-             Feature B (persistentes Chat-Memory) und E (Ticket-Persistenz +
-             Analytics) setzen auf eine echte relationale DB. -->
-
-        <!-- JDBC-Layer: DataSource-Autokonfiguration, JdbcClient, HikariCP -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>

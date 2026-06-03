@@ -1,0 +1,6 @@
+2026-06-03T05:56:46.672+02:00 ERROR 36560 --- [spring-ai-demo] [nio-8080-exec-3] o.a.c.c.C.[.[.[/].[dispatcherServlet]    : Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: com.anthropic.errors.UnauthorizedException: 401: {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CbfesVogvqtWsuWoZuaJ1"}] with root cause
+
+com.anthropic.errors.UnauthorizedException: 401: {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011CbfesVogvqtWsuWoZuaJ1"}
+        at com.anthropic.errors.UnauthorizedException$Builder.build(UnauthorizedException.kt:78) ~[anthropic-java-core-2.34.0.jar:2.34.0]
+        at com.anthropic.core.handlers.ErrorHandler$errorHandler$1.handle(ErrorHandler.kt:50) ~[anthropic-java-core-2.34.0.jar:2.34.0]
+        at com.anthropic.core.handlers.ErrorHandler$errorHandler$1.handle(ErrorHandler.kt:37) ~[anthropic-java-core-2.34.0.jar:2.34.0]
