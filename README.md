@@ -216,6 +216,22 @@ Die Testsuite läuft **vollständig offline** und ohne API-Key:
 Derselbe Befehl läuft im GitHub-Actions-Workflow (`.github/workflows/ci.yml`)
 als Quality-Gate bei jedem Push/PR.
 
+### Optional: echter pgvector-Pfad (Docker)
+
+Der `PgVectorStore` aus Feature 17 lässt sich nicht auf H2 prüfen. Dafür gibt es
+einen separaten Integrationstest (`PgVectorPostgresIntegrationTest`, mit
+`@Tag("docker")`), der per **Testcontainers** eine echte pgvector-PostgreSQL
+hochfährt und Ablegen/Suche inkl. Metadaten-Filter verifiziert. Er ist aus dem
+Standardlauf ausgeschlossen und braucht eine Docker-Engine – ein API-Key ist
+**nicht** nötig:
+
+```bash
+mvn test -Dtest.excludedGroups= -Dgroups=docker
+```
+
+In CI fährt ihn der separate, **manuell** ausgelöste Workflow
+`.github/workflows/ci-docker.yml` (`workflow_dispatch`).
+
 ## Offline-Embedding (bewusste Designentscheidung)
 
 Der Anthropic-Provider liefert kein Embedding-Modell. Statt einen zweiten

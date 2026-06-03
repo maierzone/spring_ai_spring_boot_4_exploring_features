@@ -1,0 +1,40 @@
+# ============================================================================
+# Docker-Quality-Gate: echter pgvector-Pfad (Feature 17)
+# ----------------------------------------------------------------------------
+# Faehrt die mit @Tag("docker") markierten Integrationstests aus. Diese starten
+# per Testcontainers eine echte pgvector-PostgreSQL und pruefen, dass die
+# Spring-AI-Autokonfiguration einen PgVectorStore verdrahtet und Ablegen/Suche
+# inkl. Metadaten-Filter funktionieren.
+#
+# Bewusst NUR manuell (workflow_dispatch): der Lauf braucht Docker und ist
+# schwerer als das offline Standard-Gate (ci.yml). Ein API-Key ist NICHT noetig
+# (die pgvector-Endpunkte nutzen das offline HashingEmbeddingModel).
+# ============================================================================
+name: CI (Docker / pgvector)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-docker-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pgvector-integration:
+    name: pgvector-Integrationstest (Testcontainers)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      # Nur die docker-Gruppe ausfuehren: die Standard-Ausschlussregel aufheben
+      # (-Dtest.excludedGroups=) und gezielt @Tag("docker") waehlen (-Dgroups=docker).
+      - name: pgvector-Integrationstest
+        run: mvn -B -ntp test -Dtest.excludedGroups= -Dgroups=docker
