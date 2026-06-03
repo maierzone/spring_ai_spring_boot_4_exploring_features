@@ -357,6 +357,42 @@ layout: two-cols-header
 layoutClass: gap-8
 ---
 
+# 7 · pgvector — persistenter VectorStore
+
+::left::
+
+Derselbe `VectorStore` wie in RAG — aber in **PostgreSQL** statt im RAM. Nur die Bean wechselt, der Code bleibt.
+
+- `SimpleVectorStore` → `PgVectorStore` per **Profil** `pgvector`
+- Embeddings **überleben einen Neustart** (Tabelle `vector_store`)
+- **Metadaten-Filter** in der Suche — DB-seitig ausgewertet
+- Tests bleiben offline auf **H2** (`@ActiveProfiles("test")`)
+
+<div class="mt-4 text-xs opacity-70">
+📁 <code>feature17_pgvector/PgVectorController.java</code> · <code>config/DemoBeans.java</code><br/>
+🔗 <code>POST /api/pgvector/documents</code> · <code>GET /api/pgvector/search?query=…&category=…</code>
+</div>
+
+::right::
+
+```java {2}
+@Bean
+@Profile("!pgvector")        // weicht zur Laufzeit dem PgVectorStore
+VectorStore vectorStore(EmbeddingModel m) { … }
+```
+
+```java {4}
+vectorStore.similaritySearch(
+    SearchRequest.builder().query(q).topK(3)
+        // DB-seitiger Metadaten-Filter:
+        .filterExpression("category == 'spring'").build());
+```
+
+---
+layout: two-cols-header
+layoutClass: gap-8
+---
+
 # Querschnitt: Advisors — der Erweiterungspunkt
 
 ::left::

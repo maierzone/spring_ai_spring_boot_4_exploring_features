@@ -9,6 +9,7 @@ import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Integrations-Smoke-Test: Startet den kompletten Spring-Kontext und stellt sicher,
@@ -18,8 +19,13 @@ import org.springframework.context.ApplicationContext;
  * <p>Es wird kein echter Modellaufruf ausgeführt – das Hochfahren des Kontexts geht
  * nicht ins Netz und benötigt daher keinen gültigen API-Key (der Platzhalter aus
  * {@code application.properties} genügt).</p>
+ *
+ * <p>{@code @ActiveProfiles("test")} überschreibt das Laufzeit-Profil {@code pgvector}:
+ * statt des PgVectorStore (Postgres) bleibt der offline {@code SimpleVectorStore}
+ * auf H2 aktiv, sodass dieser Test ohne Docker läuft (Feature 17).</p>
  */
 @SpringBootTest
+@ActiveProfiles("test")
 class SpringAiDemoApplicationTests {
 
     @Autowired

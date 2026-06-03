@@ -21,6 +21,11 @@
     <properties>
         <java.version>21</java.version>
         <spring-ai.version>2.0.0-M8</spring-ai.version>
+        <!-- JUnit-Tags, die das Standard-'mvn verify' ueberspringt. Die mit
+             @Tag("docker") markierten Integrationstests benoetigen eine
+             Docker-Engine (Testcontainers) und laufen nur im separaten
+             Workflow ci-docker.yml (dort via -Dtest.excludedGroups= -Dgroups=docker). -->
+        <test.excludedGroups>docker</test.excludedGroups>
     </properties>
 
     <dependencyManagement>
@@ -52,6 +57,16 @@
         <dependency>
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-advisors-vector-store</artifactId>
+        </dependency>
+
+        <!-- pgvector als persistenter VectorStore (Feature 17). Autokonfiguriert
+             einen PgVectorStore (Extension 'vector', Tabelle + Index) auf der
+             vorhandenen PostgreSQL-DataSource. Aktiv nur im Profil 'pgvector'
+             (siehe DemoBeans/application-pgvector.properties); in den Tests bleibt
+             der offline SimpleVectorStore aktiv. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
         </dependency>
 
         <dependency>
@@ -119,6 +134,27 @@
             <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <!-- Testcontainers fuer den pgvector-Integrationstest (@Tag("docker")):
+             faehrt eine echte pgvector-PostgreSQL hoch und verdrahtet sie via
+             @ServiceConnection. Nur fuer den separaten ci-docker.yml-Workflow;
+             das Standard-Quality-Gate ueberspringt diese Gruppe und bleibt offline.
+             Versionen werden vom spring-boot-dependencies-BOM verwaltet. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -127,6 +163,18 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+
+            <!-- Schliesst die mit @Tag("docker") markierten Integrationstests aus
+                 dem Standardlauf aus (siehe Property test.excludedGroups). Der
+                 ci-docker.yml-Workflow hebt das per -Dtest.excludedGroups= auf und
+                 waehlt die Gruppe gezielt mit -Dgroups=docker. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <excludedGroups>${test.excludedGroups}</excludedGroups>
+                </configuration>
             </plugin>
         </plugins>
     </build>
