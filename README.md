@@ -27,6 +27,17 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 | 9 | **Multimodalität** – Text + Bild | `POST /api/multimodal` (multipart: `image`, `message`) | `feature09_multimodal` |
 | 10 | **Advisors** – Interzeptoren (eigener Metrics-Advisor, Logging, Guardrail) | `GET /api/advisors?message=…` | `feature10_advisors` |
 
+### Vertiefte Features (siehe Handbuch `docs/HANDBUCH.md`)
+
+| # | Feature | Endpunkt | Klasse |
+|---|---------|----------|--------|
+| 11 | **MCP** – Model Context Protocol (Server **und** Client) | MCP-SSE-Endpunkt (Server) · `GET /api/mcp/client/tools` · `GET /api/mcp/client/ask?message=…` | `feature11_mcp` |
+| 12 | **Observability** – Micrometer-Metriken (Tokens/Latenz) | `GET /api/observability/ask?message=…` · `GET /api/observability/metrics` · `/actuator/metrics` | `feature12_observability` |
+| 13 | **Evaluation** – LLM-as-a-Judge gegen Halluzinationen | `GET /api/evaluate/relevancy?question=…&context=…&answer=…` | `feature13_evaluation` |
+
+Ausführliche Erläuterung dieser drei Themenblöcke (Konzept, Code, Konfiguration,
+Fallstricke) im Handbuch: **[`docs/HANDBUCH.md`](docs/HANDBUCH.md)**.
+
 ### Datenbank-Features (PostgreSQL via Docker)
 
 Die zuvor rein In-Memory umgesetzten Bereiche sind jetzt an eine echte
@@ -115,6 +126,20 @@ curl -X POST "localhost:8080/api/multimodal" \
 
 # 10) Advisors – Guardrail + eigener Metrics-Advisor (siehe Server-Log fuer Latenz/Tokens)
 curl "localhost:8080/api/advisors?message=Erklaere+kurz,+was+ein+Advisor+ist."
+
+# 11) MCP-Client – welche Tools bietet ein angebundener MCP-Server? (ohne API-Key;
+#     ohne konfigurierten Server kommt ein Hinweis – siehe docs/HANDBUCH.md)
+curl "localhost:8080/api/mcp/client/tools"
+
+# 12) Observability – bereits erfasste gen_ai-Metriken (vor 1. Aufruf leer, ohne API-Key)
+curl "localhost:8080/api/observability/metrics"
+curl "localhost:8080/actuator/metrics/gen_ai.client.token.usage"   # nach einem echten Aufruf
+
+# 13) Evaluation – ist die Antwort durch den Kontext gedeckt? (LLM-as-a-Judge)
+curl -G "localhost:8080/api/evaluate/relevancy" \
+     --data-urlencode "question=Was ist RAG?" \
+     --data-urlencode "context=RAG kombiniert Retrieval mit Generation." \
+     --data-urlencode "answer=RAG ruft passende Dokumente ab und nutzt sie als Kontext."
 ```
 
 ## Starten
