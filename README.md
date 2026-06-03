@@ -38,6 +38,18 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 Ausführliche Erläuterung dieser drei Themenblöcke (Konzept, Code, Konfiguration,
 Fallstricke) im Handbuch: **[`docs/HANDBUCH.md`](docs/HANDBUCH.md)**.
 
+### Agentic Patterns (siehe Handbuch `docs/HANDBUCH-EVALUATOR-OPTIMIZER.md`)
+
+| # | Feature | Endpunkt | Klasse |
+|---|---------|----------|--------|
+| 16 | **Evaluator-Optimizer** – KI verbessert ihre eigene Ausgabe in einer Kritik-Schleife | `GET /api/evaluator/sql?question=…` | `feature16_evaluator` |
+
+Erzeugtes SQL wird von einem zweiten „Richter"-Modell gegen das Schema bewertet;
+bei Mängeln fließt die Begründung als Feedback in einen neuen Versuch – bis es
+akzeptiert ist oder die Iterationsgrenze greift. Geschichtete Bewertung
+(deterministischer `SqlGuard` vor LLM-Richter) und Konvergenz-Logik im Detail im
+Handbuch: **[`docs/HANDBUCH-EVALUATOR-OPTIMIZER.md`](docs/HANDBUCH-EVALUATOR-OPTIMIZER.md)**.
+
 ### Datenbank-Features (PostgreSQL via Docker)
 
 Die zuvor rein In-Memory umgesetzten Bereiche sind jetzt an eine echte
