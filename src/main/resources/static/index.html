@@ -15,6 +15,28 @@
   </header>
 
   <main>
+    <!-- PARENT LAYER: Gate-Decider (KI-Router ueber allen Features) -->
+    <section class="term">
+      <div class="term-head">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="file">00_gate_decider — route.sh</span>
+      </div>
+      <div class="term-body">
+        <h2>Gate-Decider · KI-Router</h2>
+        <p class="hint">Ein Eingang fuer alles: Die KI entscheidet, welches Feature zustaendig ist,
+          und delegiert an dessen Endpunkt. Zeigt die gewaehlte Route und die durchgereichte Antwort.
+          Ruft <code>GET /api/gateway</code> auf. (Benötigt einen gültigen API-Key.)</p>
+        <div class="row">
+          <div class="field">
+            <label for="gatewayInput">Frage</label>
+            <input type="text" id="gatewayInput" value="Wie viele Versicherte haben E11.9?">
+          </div>
+          <button onclick="askGateway()">route</button>
+        </div>
+        <div id="gatewayResult" class="result hidden"></div>
+      </div>
+    </section>
+
     <!-- FEATURE 4: Structured Output mit grafischer Auswertung -->
     <section class="term">
       <div class="term-head">
@@ -108,8 +130,8 @@
       </div>
       <div class="term-body">
         <h2>DB-Abfrage · Frag deine Datenbank</h2>
-        <p class="hint">Natuerlichsprachliche Aggregations-Frage gegen den eGK-Datenbestand.
-          Das Modell nutzt gepruefte Abfrage-Tools bzw. ein abgesichertes SELECT.
+        <p class="hint">Natuerlichsprachliche Aggregations-Frage gegen den gesamten eGK-Datenbestand
+          (alle Tabellen). Das Modell nutzt gepruefte Abfrage-Tools bzw. ein abgesichertes SELECT.
           Ruft <code>GET /api/db/ask</code> auf. (Benötigt einen gültigen API-Key + befüllte DB.)</p>
         <div class="row">
           <div class="field">

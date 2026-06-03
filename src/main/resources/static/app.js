@@ -182,6 +182,24 @@ async function askRag() {
   });
 }
 
+// --- Parent Layer: Gate-Decider (KI-Router ueber allen Features) ----------
+
+async function askGateway() {
+  const btn = event.currentTarget;
+  const q = document.getElementById("gatewayInput").value.trim();
+  const out = document.getElementById("gatewayResult");
+  await withBusy(btn, async () => {
+    try {
+      const res = await fetch("/api/gateway?question=" + encodeURIComponent(q));
+      const body = await res.json();
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      showResult(out, "→ Route: " + body.route + "\n\n" + body.antwort, false);
+    } catch (e) {
+      showResult(out, e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)", true);
+    }
+  });
+}
+
 // --- Feature 14: Frag deine Datenbank -------------------------------------
 
 async function askDb() {

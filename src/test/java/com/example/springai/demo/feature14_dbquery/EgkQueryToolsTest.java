@@ -80,4 +80,52 @@ class EgkQueryToolsTest {
                 .sum();
         assertThat(summe).isEqualTo(100);
     }
+
+    @Test
+    void summeGeschlechtErgibtAlleVersicherten() {
+        assertThat(summeVerteilung(tools.versicherteNachGeschlecht())).isEqualTo(100);
+    }
+
+    @Test
+    void leistungserbringerTypenSummierenSichZurGesamtzahl() {
+        long gesamt = Long.parseLong(
+                tools.gesamtzahlLeistungserbringer().replaceAll("\\D+", ""));
+        assertThat(gesamt).isPositive()
+                .isEqualTo(summeVerteilung(tools.leistungserbringerNachTyp()));
+    }
+
+    @Test
+    void topOrteVersicherteRespektiertLimit() {
+        assertThat(tools.topOrteVersicherte(3).lines().count()).isEqualTo(3);
+    }
+
+    @Test
+    void krankenkassenNachTypNenntGkvOderPkv() {
+        assertThat(tools.krankenkassenNachTyp()).containsAnyOf("GKV", "PKV");
+    }
+
+    @Test
+    void gueltigeCaZertifikateMeldetTeilmenge() {
+        long gesamt = Long.parseLong(
+                tools.gesamtzahlCaZertifikate().replaceAll("\\D+", ""));
+        String out = tools.gueltigeCaZertifikate();
+        // Format: "CA-Zertifikate: <gueltig> von <gesamt> aktuell gueltig."
+        long genannteGesamt = Long.parseLong(out.replaceAll(".*von (\\d+).*", "$1"));
+        assertThat(gesamt).isPositive().isEqualTo(genannteGesamt);
+    }
+
+    @Test
+    void zertifikateTypenSummierenSichZurGesamtzahl() {
+        long gesamt = Long.parseLong(
+                tools.gesamtzahlZertifikate().replaceAll("\\D+", ""));
+        assertThat(gesamt).isPositive()
+                .isEqualTo(summeVerteilung(tools.zertifikateNachTyp()));
+    }
+
+    /** Summiert die Zaehlwerte einer komma-getrennten Verteilung "k1: n1, k2: n2". */
+    private static long summeVerteilung(String verteilung) {
+        return java.util.Arrays.stream(verteilung.split(", "))
+                .mapToLong(p -> Long.parseLong(p.substring(p.lastIndexOf(": ") + 2)))
+                .sum();
+    }
 }

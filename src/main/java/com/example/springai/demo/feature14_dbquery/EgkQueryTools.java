@@ -82,7 +82,100 @@ public class EgkQueryTools {
         return zeilen.isEmpty() ? "Keine Krankenkassen vorhanden." : String.join("\n", zeilen);
     }
 
+    @Tool(description = "Liefert die Gesamtzahl der Leistungserbringer (Aerzte/Apotheken/Krankenhaeuser).")
+    public String gesamtzahlLeistungserbringer() {
+        return "Leistungserbringer gesamt: " + count("SELECT COUNT(*) FROM leistungserbringer");
+    }
+
+    @Tool(description = "Liefert die Verteilung der Leistungserbringer nach Typ (ARZT/APOTHEKE/KRANKENHAUS).")
+    public String leistungserbringerNachTyp() {
+        return verteilung(
+                "SELECT typ, COUNT(*) FROM leistungserbringer GROUP BY typ ORDER BY typ",
+                "Keine Leistungserbringer vorhanden.");
+    }
+
+    @Tool(description = "Listet die Orte mit den meisten Leistungserbringern absteigend auf.")
+    public String topOrteLeistungserbringer(
+            @ToolParam(description = "Wie viele Orte zurueckgeben (z.B. 5)") int limit) {
+        return topOrte("leistungserbringer", limit);
+    }
+
+    @Tool(description = "Liefert die Verteilung der Versicherten nach Geschlecht (M/W/D).")
+    public String versicherteNachGeschlecht() {
+        return verteilung(
+                "SELECT geschlecht, COUNT(*) FROM versicherte GROUP BY geschlecht ORDER BY geschlecht",
+                "Keine Versicherten vorhanden.");
+    }
+
+    @Tool(description = "Listet die Orte mit den meisten Versicherten absteigend auf.")
+    public String topOrteVersicherte(
+            @ToolParam(description = "Wie viele Orte zurueckgeben (z.B. 5)") int limit) {
+        return topOrte("versicherte", limit);
+    }
+
+    @Tool(description = "Liefert die Gesamtzahl der erfassten Diagnosen.")
+    public String gesamtzahlDiagnosen() {
+        return "Diagnosen gesamt: " + count("SELECT COUNT(*) FROM diagnosen");
+    }
+
+    @Tool(description = "Liefert die Gesamtzahl der eGK-Karten.")
+    public String gesamtzahlEgkKarten() {
+        return "eGK-Karten gesamt: " + count("SELECT COUNT(*) FROM egk_karten");
+    }
+
+    @Tool(description = "Liefert die Gesamtzahl der digitalen Zertifikate (HBA/SMC_B/EGK_AUT/EGK_ENC).")
+    public String gesamtzahlZertifikate() {
+        return "Zertifikate gesamt: " + count("SELECT COUNT(*) FROM zertifikate");
+    }
+
+    @Tool(description = "Liefert die Verteilung der Zertifikate nach Typ (HBA/SMC_B/EGK_AUT/EGK_ENC).")
+    public String zertifikateNachTyp() {
+        return verteilung(
+                "SELECT typ, COUNT(*) FROM zertifikate GROUP BY typ ORDER BY typ",
+                "Keine Zertifikate vorhanden.");
+    }
+
+    @Tool(description = "Liefert die Gesamtzahl der Krankenkassen.")
+    public String gesamtzahlKrankenkassen() {
+        return "Krankenkassen gesamt: " + count("SELECT COUNT(*) FROM krankenkassen");
+    }
+
+    @Tool(description = "Liefert die Verteilung der Krankenkassen nach Typ (GKV/PKV).")
+    public String krankenkassenNachTyp() {
+        return verteilung(
+                "SELECT typ, COUNT(*) FROM krankenkassen GROUP BY typ ORDER BY typ",
+                "Keine Krankenkassen vorhanden.");
+    }
+
+    @Tool(description = "Liefert die Gesamtzahl der ausstellenden CA-Zertifikate (Trust-Chain).")
+    public String gesamtzahlCaZertifikate() {
+        return "CA-Zertifikate gesamt: " + count("SELECT COUNT(*) FROM ca_zertifikate");
+    }
+
+    @Tool(description = "Zaehlt die aktuell gueltigen CA-Zertifikate "
+            + "(Stichtag heute zwischen not_before und not_after).")
+    public String gueltigeCaZertifikate() {
+        long gesamt = count("SELECT COUNT(*) FROM ca_zertifikate");
+        long gueltig = count("SELECT COUNT(*) FROM ca_zertifikate "
+                + "WHERE not_before <= CURRENT_DATE AND not_after >= CURRENT_DATE");
+        return "CA-Zertifikate: " + gueltig + " von " + gesamt + " aktuell gueltig.";
+    }
+
     // --- intern -------------------------------------------------------------
+
+    /**
+     * Top-N Orte einer Tabelle mit Spalte {@code ort}. Der Tabellenname stammt
+     * ausschliesslich aus festen internen String-Literalen (nie aus Modell-/
+     * Nutzereingaben), daher ist die Konkatenation hier unkritisch.
+     */
+    private String topOrte(String tabelle, int limit) {
+        int n = Math.max(1, Math.min(limit, 50));
+        List<String> zeilen = jdbc.query(
+                "SELECT ort, COUNT(*) AS anzahl FROM " + tabelle
+                        + " GROUP BY ort ORDER BY anzahl DESC LIMIT " + n,
+                (rs, i) -> rs.getString("ort") + ": " + rs.getLong("anzahl"));
+        return zeilen.isEmpty() ? "Keine Daten vorhanden." : String.join("\n", zeilen);
+    }
 
     private long count(String sql) {
         Long n = jdbc.queryForObject(sql, Long.class);

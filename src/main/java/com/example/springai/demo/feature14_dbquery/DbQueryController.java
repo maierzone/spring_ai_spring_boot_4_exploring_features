@@ -46,6 +46,7 @@ public class DbQueryController {
               zertifikate(id, typ[HBA/SMC_B/EGK_AUT/EGK_ENC], seriennummer, subject_dn,
                           ca_id -> ca_zertifikate.id, inhaber_typ, inhaber_id, not_before, not_after,
                           status[VALID/EXPIRED/REVOKED], revocation_datum)
+              ca_zertifikate(id, name, subject_dn, seriennummer, not_before, not_after)
             """;
 
     private final ChatClient chatClient;
