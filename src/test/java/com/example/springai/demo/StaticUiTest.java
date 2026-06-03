@@ -28,8 +28,9 @@ class StaticUiTest {
                 .contains("Developer-Konsole")
                 .contains("styles.css")
                 .contains("app.js")
-                // ruft die drei Dev-Feature-Endpunkte auf
-                .contains("/api/tickets/analyze");
+                // ruft die Dev-Feature-Endpunkte auf
+                .contains("/api/tickets/analyze")
+                .contains("/api/db/ask");
     }
 
     @Test
@@ -37,6 +38,7 @@ class StaticUiTest {
         String js = read("static/app.js");
         assertThat(js)
                 .contains("analyzeTicket")
-                .contains("renderSentimentGauge");
+                .contains("renderSentimentGauge")
+                .contains("askDb");
     }
 }

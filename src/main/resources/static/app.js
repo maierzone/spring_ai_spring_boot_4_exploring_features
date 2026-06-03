@@ -182,6 +182,24 @@ async function askRag() {
   });
 }
 
+// --- Feature 14: Frag deine Datenbank -------------------------------------
+
+async function askDb() {
+  const btn = event.currentTarget;
+  const q = document.getElementById("dbInput").value.trim();
+  const out = document.getElementById("dbResult");
+  await withBusy(btn, async () => {
+    try {
+      const res = await fetch("/api/db/ask?question=" + encodeURIComponent(q));
+      const body = await res.text();
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + body);
+      showResult(out, body, false);
+    } catch (e) {
+      showResult(out, e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt und die DB befüllt?)", true);
+    }
+  });
+}
+
 /** Zeigt die abgerufenen Quellen – funktioniert ohne API-Key. */
 async function showSources() {
   const btn = event.currentTarget;

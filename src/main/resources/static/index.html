@@ -99,6 +99,28 @@
         <div id="ragResult" class="result hidden"></div>
       </div>
     </section>
+
+    <!-- FEATURE 14: Frag deine Datenbank (Text-to-SQL / Tool-Calling) -->
+    <section class="term">
+      <div class="term-head">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="file">14_db_query — ask-database.sh</span>
+      </div>
+      <div class="term-body">
+        <h2>DB-Abfrage · Frag deine Datenbank</h2>
+        <p class="hint">Natuerlichsprachliche Aggregations-Frage gegen den eGK-Datenbestand.
+          Das Modell nutzt gepruefte Abfrage-Tools bzw. ein abgesichertes SELECT.
+          Ruft <code>GET /api/db/ask</code> auf. (Benötigt einen gültigen API-Key + befüllte DB.)</p>
+        <div class="row">
+          <div class="field">
+            <label for="dbInput">Frage</label>
+            <input type="text" id="dbInput" value="Wie viele Versicherte haben E11.9?">
+          </div>
+          <button onclick="askDb()">ask</button>
+        </div>
+        <div id="dbResult" class="result hidden"></div>
+      </div>
+    </section>
   </main>
 
   <script src="app.js"></script>
