@@ -397,8 +397,94 @@ function PgVectorPanel() {
   );
 }
 
+// --- Docs-RAG Pipeline (F18) ----------------------------------------------
+function DocsRagPanel() {
+  const [stats, setStats] = React.useState({ total: 0, incoming: 0, processed: 0, error: 0, running: false, batchSize: 1 });
+  const [batch, setBatch] = React.useState(1);
+  const [msg, setMsg] = React.useState(null);
+  const [err, setErr] = React.useState(null);
+  const [busy, run] = useFetch();
+
+  const HINT = "\n(Läuft die App mit Profil 'specs'? Endpunkte gibt es nur dort.)";
+
+  const loadStats = async () => {
+    try {
+      const res = await fetch("/api/docs-rag/stats");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      setStats(await res.json());
+      setErr(null);
+    } catch (e) { setErr(e.message + HINT); }
+  };
+
+  // Live-Polling der 4 Zähler.
+  React.useEffect(() => {
+    loadStats();
+    const t = setInterval(loadStats, 2000);
+    return () => clearInterval(t);
+  }, []);
+
+  const post = (path, then) => run(async () => {
+    setErr(null); setMsg(null);
+    try {
+      const res = await fetch(path, { method: "POST" });
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
+      then(await res.json());
+    } catch (e) { setErr(e.message + HINT); }
+  });
+
+  const seed = () => post("/api/docs-rag/seed", (r) => { setMsg(r.inserted + " neue Dokumente in den Katalog aufgenommen."); setStats(s => ({ ...s, ...r })); });
+  const start = () => post("/api/docs-rag/start?batch=" + batch, setStats);
+  const stop = () => post("/api/docs-rag/stop", setStats);
+
+  const cards = [
+    { label: "TOTAL · gemspec", value: stats.total, color: "#1B4D89", icon: "inventory_2" },
+    { label: "incoming", value: stats.incoming, color: "#9A6700", icon: "schedule" },
+    { label: "processed", value: stats.processed, color: "#1E7D45", icon: "task_alt" },
+    { label: "error", value: stats.error, color: "#BA1A1A", icon: "error" },
+  ];
+  const done = stats.total ? Math.round(((stats.processed + stats.error) / stats.total) * 100) : 0;
+
+  return (
+    <Panel icon="cloud_sync" eyebrow="18_docs_rag — pipeline.sh" title="Docs-RAG Pipeline · gemspec live-Ingestion"
+      hint={<>Lädt den gemspec-Katalog (<span className="inline-code">sitemap.xml</span>) und verarbeitet die Spec-PDFs batchweise live in den pgvector-Speicher. Status pro Dokument: incoming → processed | error. Endpunkte <span className="inline-code">/api/docs-rag/seed · /start · /stop · /stats</span>. Nur mit Profil <span className="inline-code">specs</span>.</>}>
+      <div className="viz" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
+        {cards.map(c => (
+          <div className="viz-card" key={c.label}>
+            <div className="vc-label"><Icon name={c.icon} /> {c.label}</div>
+            <div style={{ fontSize: 34, fontWeight: 700, color: c.color, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.1 }}>{c.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div className="gauge-track" style={{ marginTop: 16 }}>
+        <div style={{ width: done + "%", height: "100%", borderRadius: "inherit", background: "linear-gradient(90deg,#1E7D45,#1B4D89)", transition: "width .4s" }}></div>
+      </div>
+      <div className="hint" style={{ marginTop: 6 }}>{done}% verarbeitet ({stats.processed + stats.error}/{stats.total})</div>
+
+      <div className="row" style={{ marginTop: 18, alignItems: "center" }}>
+        <div className="field" style={{ flex: "0 0 130px" }}>
+          <Icon name="layers" />
+          <select value={batch} onChange={e => setBatch(Number(e.target.value))} disabled={stats.running}
+            style={{ background: "transparent", color: "inherit", border: "none", outline: "none", font: "inherit", width: "100%" }}>
+            <option value={1}>Batch 1</option>
+            <option value={5}>Batch 5</option>
+            <option value={10}>Batch 10</option>
+          </select>
+        </div>
+        {stats.running
+          ? <Button variant="outlined" icon="pause" busy={busy} onClick={stop}>stop</Button>
+          : <Button icon="play_arrow" busy={busy} onClick={start}>start</Button>}
+        <Button variant="outlined" icon="cloud_download" busy={busy} disabled={stats.running} onClick={seed}>seed katalog</Button>
+        <span className="stat-chip"><span className="dot" style={{ background: stats.running ? "#1E7D45" : "#9A6700" }}></span>{stats.running ? "läuft · Batch " + stats.batchSize : "pausiert"}</span>
+      </div>
+      {msg && <ConsoleOut text={msg} />}
+      <ConsoleOut text={err} error />
+    </Panel>
+  );
+}
+
 const PANELS = {
   gateway: GatewayPanel, structured: StructuredPanel, tools: ToolsPanel, rag: RagPanel,
-  db: DbPanel, evaluator: EvaluatorPanel, pgvector: PgVectorPanel,
+  db: DbPanel, evaluator: EvaluatorPanel, pgvector: PgVectorPanel, docsrag: DocsRagPanel,
 };
 Object.assign(window, { PANELS });

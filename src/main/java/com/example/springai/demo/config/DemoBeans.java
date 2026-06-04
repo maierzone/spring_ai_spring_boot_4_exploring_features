@@ -25,8 +25,17 @@ public class DemoBeans {
     /**
      * Eigenes, offline arbeitendes Embedding-Modell (siehe {@link HashingEmbeddingModel}).
      * Wird vom Vektorspeicher (RAG) und vom Embedding-Endpunkt verwendet.
+     *
+     * <p><b>Profil-Switch (Spec-RAG):</b> Mit {@code @Profile("!specs")} entfällt diese
+     * Bean, sobald das Profil {@code specs} aktiv ist. Dann greift die
+     * {@code spring-ai-starter-model-transformers}-Autokonfiguration
+     * ({@code @ConditionalOnMissingBean}) und stellt ein echtes, lokal in-process
+     * laufendes ONNX-Embedding (all-MiniLM-L6-v2, 384-dim) bereit – nötig für
+     * semantisches RAG über die gematik-Spec-PDFs. In Tests/CI bleibt das offline
+     * Hashing-Modell aktiv, sodass kein Modell heruntergeladen wird.</p>
      */
     @Bean
+    @Profile("!specs")
     public EmbeddingModel embeddingModel() {
         return new HashingEmbeddingModel();
     }
@@ -62,8 +71,9 @@ public class DemoBeans {
      * beim Hinzufügen jedes Dokument in einen Vektor zu übersetzen, und führt die
      * Ähnlichkeitssuche per Kosinus-Ähnlichkeit durch.</p>
      *
-     * <p><b>Profil-Switch (Feature 17):</b> Diese Bean ist mit {@code @Profile("!postgres")}
-     * versehen und entfällt, wenn das Profil {@code postgres} aktiv ist.
+     * <p><b>Profil-Switch (Feature 17 / Spec-RAG):</b> Diese Bean ist mit
+     * {@code @Profile("!postgres & !specs")} versehen und entfällt, wenn das Profil
+     * {@code postgres} <em>oder</em> {@code specs} aktiv ist.
      * Dann übernimmt der autokonfigurierte {@code PgVectorStore} – die Spring-AI-
      * Vektorspeicher-Autokonfiguration ist {@code @ConditionalOnMissingBean(VectorStore.class)}
      * und greift nur, weil hier keine konkurrierende Bean mehr existiert. Ohne
@@ -71,7 +81,7 @@ public class DemoBeans {
      * bleibt der offline arbeitende {@code SimpleVectorStore} aktiv.</p>
      */
     @Bean
-    @Profile("!postgres")
+    @Profile("!postgres & !specs")
     public VectorStore vectorStore(EmbeddingModel embeddingModel) {
         SimpleVectorStore store = SimpleVectorStore.builder(embeddingModel).build();
         // Wissen wird aus einer Ressourcen-Datei geladen und in Absätze zerlegt

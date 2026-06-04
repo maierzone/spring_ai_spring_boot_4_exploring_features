@@ -61,6 +61,7 @@ const FEATURES = [
   { id: "db",         icon: "database",       name: "DB-Abfrage",        endpoint: "/api/db/ask" },
   { id: "evaluator",  icon: "autorenew",      name: "Evaluator-Optimizer", endpoint: "/api/evaluator/sql" },
   { id: "pgvector",   icon: "database",       name: "pgvector",          endpoint: "/api/pgvector" },
+  { id: "docsrag",    icon: "cloud_sync",     name: "Docs-RAG Pipeline", endpoint: "/api/docs-rag" },
 ];
 
 function NavDrawer({ active, onSelect }) {

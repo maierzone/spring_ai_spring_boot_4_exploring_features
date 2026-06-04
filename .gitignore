@@ -12,3 +12,7 @@ target/
 
 # OS
 .DS_Store
+
+# Lokale gematik-Spec-PDFs: nur fuer lokale Laeufe unter src/main/resources/specs
+# ablegen, nie einchecken (Lizenz/Groesse). Der Ordner selbst bleibt via .gitkeep erhalten.
+src/main/resources/specs/*.pdf

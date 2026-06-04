@@ -59,6 +59,25 @@
             <artifactId>spring-ai-advisors-vector-store</artifactId>
         </dependency>
 
+        <!-- PDF-Reader (PagePdfDocumentReader, PDFBox) fuer die Spec-Ingestion:
+             zerlegt gematik-Spec-PDFs in Seiten-Dokumente, die der TokenTextSplitter
+             anschliessend in Chunks schneidet. Nur fuer das Profil 'specs' relevant. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-pdf-document-reader</artifactId>
+        </dependency>
+
+        <!-- Lokales, in-process ONNX-Embedding (all-MiniLM-L6-v2, 384-dim) fuer
+             echtes semantisches RAG ueber die Specs. Die Autokonfiguration ist
+             @ConditionalOnMissingBean(EmbeddingModel): ausserhalb des Profils 'specs'
+             stellt DemoBeans das HashingEmbeddingModel bereit, sodass dieser Starter
+             zurueckweicht und KEIN Modell geladen wird (CI bleibt offline). Erst unter
+             'specs' (Hashing-Bean entfaellt) greift das ONNX-Modell. -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-starter-model-transformers</artifactId>
+        </dependency>
+
         <!-- pgvector als persistenter VectorStore (Feature 17). Autokonfiguriert
              einen PgVectorStore (Extension 'vector', Tabelle + Index) auf der
              vorhandenen PostgreSQL-DataSource. Aktiv nur im Profil 'pgvector'

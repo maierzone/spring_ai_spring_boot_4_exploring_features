@@ -41,4 +41,19 @@ class StaticUiTest {
                 .contains("renderSentimentGauge")
                 .contains("askDb");
     }
+
+    @Test
+    void docsRagPanelIstVerdrahtet() throws Exception {
+        String panels = read("static/panels.jsx");
+        assertThat(panels)
+                .contains("DocsRagPanel")
+                .contains("/api/docs-rag/stats")
+                .contains("/api/docs-rag/seed")
+                .contains("/api/docs-rag/start")
+                .contains("/api/docs-rag/stop")
+                // im PANELS-Register eingetragen
+                .contains("docsrag: DocsRagPanel");
+        // im Navigations-Menue registriert
+        assertThat(read("static/components.jsx")).contains("Docs-RAG Pipeline");
+    }
 }
