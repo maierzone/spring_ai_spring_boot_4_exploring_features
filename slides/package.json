@@ -2,7 +2,7 @@
   "name": "spring-ai-slides",
   "version": "1.0.0",
   "private": true,
-  "description": "Slidev-Foliendeck zur Spring-AI-Demo (Backend Working Group)",
+  "description": "Slidev-Foliendeck zur Spring-AI-Demo",
   "type": "module",
   "scripts": {
     "dev": "slidev --open",
