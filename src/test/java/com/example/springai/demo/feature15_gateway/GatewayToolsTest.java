@@ -81,7 +81,7 @@ class GatewayToolsTest {
                 .thenReturn(new SimilarityResult("a", "b", 0.875));
         String result = gateway.aehnlichkeit("a", "b");
         assertThat(recorder.route()).isEqualTo("embeddings");
-        assertThat(result).contains("0,875").contains("'a'").contains("'b'");
+        assertThat(result).contains("0.875").contains("'a'").contains("'b'");
     }
 
     @Test
