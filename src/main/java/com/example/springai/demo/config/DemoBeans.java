@@ -62,16 +62,16 @@ public class DemoBeans {
      * beim Hinzufügen jedes Dokument in einen Vektor zu übersetzen, und führt die
      * Ähnlichkeitssuche per Kosinus-Ähnlichkeit durch.</p>
      *
-     * <p><b>Profil-Switch (Feature 17):</b> Diese Bean ist mit {@code @Profile("!pgvector")}
-     * versehen und entfällt damit in der Standardlaufzeit (Profil {@code pgvector}).
+     * <p><b>Profil-Switch (Feature 17):</b> Diese Bean ist mit {@code @Profile("!postgres")}
+     * versehen und entfällt, wenn das Profil {@code postgres} aktiv ist.
      * Dann übernimmt der autokonfigurierte {@code PgVectorStore} – die Spring-AI-
      * Vektorspeicher-Autokonfiguration ist {@code @ConditionalOnMissingBean(VectorStore.class)}
-     * und greift nur, weil hier keine konkurrierende Bean mehr existiert. In den
-     * Tests ({@code @ActiveProfiles("test")}) bleibt der offline arbeitende
-     * {@code SimpleVectorStore} aktiv, sodass das Quality-Gate ohne Docker läuft.</p>
+     * und greift nur, weil hier keine konkurrierende Bean mehr existiert. Ohne
+     * explizites Profil (H2, Default) und in den Tests ({@code @ActiveProfiles("test")})
+     * bleibt der offline arbeitende {@code SimpleVectorStore} aktiv.</p>
      */
     @Bean
-    @Profile("!pgvector")
+    @Profile("!postgres")
     public VectorStore vectorStore(EmbeddingModel embeddingModel) {
         SimpleVectorStore store = SimpleVectorStore.builder(embeddingModel).build();
         // Wissen wird aus einer Ressourcen-Datei geladen und in Absätze zerlegt

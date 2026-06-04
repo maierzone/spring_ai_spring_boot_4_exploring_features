@@ -96,6 +96,12 @@
             <artifactId>spring-ai-starter-model-chat-memory-repository-jdbc</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
+            <version>5.1.0</version>
+        </dependency>
+
         <!-- Spring Boot startet beim 'mvn spring-boot:run' den in compose.yaml
              definierten Postgres-Container automatisch und verdrahtet die
              DataSource selbst (Zero-Setup). Nur zur Laufzeit, nicht transitiv. -->
@@ -113,13 +119,13 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- H2 als eingebettete DB fuer die Tests: laesst das Quality-Gate
-             vollstaendig offline laufen (kein Docker/Postgres noetig). Spring AI
-             M8 bringt einen H2-Dialekt fuer das Chat-Memory-Schema mit. -->
+        <!-- H2 als eingebettete DB: fuer Tests UND fuer die Standardlaufzeit ohne
+             Profil (kein Docker/Postgres noetig). Spring AI M8 bringt einen
+             H2-Dialekt fuer das Chat-Memory-Schema mit. -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Test-Stack: JUnit 5, Mockito, Spring-Test, AssertJ -->
@@ -156,6 +162,8 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+
 
     <build>
         <plugins>

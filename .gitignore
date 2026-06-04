@@ -1,7 +1,7 @@
 target/
 *.class
 *.log
-
+*.env
 # IDE
 .idea/
 *.iml

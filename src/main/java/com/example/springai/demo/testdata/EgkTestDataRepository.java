@@ -33,7 +33,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public class EgkTestDataRepository {
 
-    /** Reihenfolge child -> parent fuers Loeschen (umgekehrt zum Einfuegen). */
     private static final List<String> TABELLEN_LOESCH_REIHENFOLGE = List.of(
             "zertifikate", "diagnosen", "egk_karten", "versicherte",
             "leistungserbringer", "ca_zertifikate", "krankenkassen");
@@ -44,10 +43,6 @@ public class EgkTestDataRepository {
         this.jdbc = jdbc;
     }
 
-    /**
-     * Leert alle eGK-Tabellen und schreibt den uebergebenen Datensatz frisch ein.
-     * Laeuft in einer Transaktion – entweder ist alles drin oder nichts.
-     */
     @Transactional
     public void replaceAll(Dataset d) {
         clear();
@@ -60,14 +55,12 @@ public class EgkTestDataRepository {
         insertZertifikate(d.zertifikate());
     }
 
-    /** Loescht alle Testdaten (in FK-sicherer Reihenfolge). */
     @Transactional
     public void clear() {
         TABELLEN_LOESCH_REIHENFOLGE.forEach(t -> jdbc.update("DELETE FROM " + t));
     }
 
     // --- Inserts ------------------------------------------------------------
-
     private void insertKrankenkassen(List<Krankenkasse> list) {
         jdbc.batchUpdate("INSERT INTO krankenkassen (id, ik, name, typ) VALUES (?, ?, ?, ?)",
                 setter(list, (ps, k) -> {

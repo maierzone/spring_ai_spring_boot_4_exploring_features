@@ -20,9 +20,9 @@ import org.springframework.test.context.ActiveProfiles;
  * nicht ins Netz und benötigt daher keinen gültigen API-Key (der Platzhalter aus
  * {@code application.properties} genügt).</p>
  *
- * <p>{@code @ActiveProfiles("test")} überschreibt das Laufzeit-Profil {@code pgvector}:
- * statt des PgVectorStore (Postgres) bleibt der offline {@code SimpleVectorStore}
- * auf H2 aktiv, sodass dieser Test ohne Docker läuft (Feature 17).</p>
+ * <p>{@code @ActiveProfiles("test")} stellt sicher, dass kein Profil {@code postgres}
+ * aktiv ist: der offline {@code SimpleVectorStore} auf H2 wird genutzt, sodass
+ * dieser Test ohne Docker läuft (Feature 17).</p>
  */
 @SpringBootTest
 @ActiveProfiles("test")

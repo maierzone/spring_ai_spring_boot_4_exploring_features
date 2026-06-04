@@ -22,7 +22,7 @@ import org.testcontainers.utility.DockerImageName;
  * Verifiziert den <b>echten</b> pgvector-Pfad gegen eine per Testcontainers
  * hochgefahrene PostgreSQL mit der Extension {@code vector}. Anders als die
  * offline Unit-Tests (H2/SimpleVectorStore) startet dieser Test den vollen
- * Kontext im Profil {@code pgvector}, sodass die Spring-AI-Autokonfiguration
+ * Kontext im Profil {@code postgres}, sodass die Spring-AI-Autokonfiguration
  * tatsächlich einen {@code PgVectorStore} verdrahtet.
  *
  * <p>Der Test ist mit {@code @Tag("docker")} markiert und damit aus dem
@@ -33,7 +33,7 @@ import org.testcontainers.utility.DockerImageName;
  * {@code HashingEmbeddingModel}, ein LLM wird nicht aufgerufen.</p>
  */
 @SpringBootTest
-@ActiveProfiles("pgvector")
+@ActiveProfiles("postgres")
 @Testcontainers
 @Tag("docker")
 class PgVectorPostgresIntegrationTest {
