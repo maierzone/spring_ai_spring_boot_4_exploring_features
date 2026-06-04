@@ -4,6 +4,8 @@ const { useState } = React;
 function Panel({ icon, eyebrow, title, hint, children }) {
   return (
     <section className="panel">
+      <div className="panel-banner"></div>
+      <div className="tabstrip"><span className="tab active">{eyebrow}</span></div>
       <div className="panel-head">
         <div className="p-ic"><Icon name={icon} /></div>
         <div>
@@ -30,7 +32,15 @@ function useFetch() {
 
 function ConsoleOut({ text, error }) {
   if (!text) return null;
-  return <div className={"console" + (error ? " error" : "")}>{text}</div>;
+  return (
+    <div className={"console-block" + (error ? " error" : "")}>
+      <div className="term-bar">
+        <span className="wd r"></span><span className="wd y"></span><span className="wd g"></span>
+        <span className="tb-label">bash — output</span>
+      </div>
+      <div className={"console" + (error ? " error" : "")}>{text}</div>
+    </div>
+  );
 }
 
 // --- Gate-Decider ---------------------------------------------------------

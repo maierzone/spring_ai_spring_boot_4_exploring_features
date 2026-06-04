@@ -13,14 +13,36 @@ function Button({ variant = "filled", icon, busy, children, ...rest }) {
   );
 }
 
+function ThemeSwitch() {
+  const [theme, setTheme] = React.useState(
+    () => document.documentElement.dataset.theme || "c"
+  );
+  React.useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("console-theme", theme);
+  }, [theme]);
+  return (
+    <div className="theme-switch" role="group" aria-label="Design-Theme">
+      <button className={theme === "c" ? "on" : ""} onClick={() => setTheme("c")}>
+        <Icon name="bubble_chart" />Soft
+      </button>
+      <button className={theme === "b" ? "on" : ""} onClick={() => setTheme("b")}>
+        <Icon name="terminal" />Terminal
+      </button>
+    </div>
+  );
+}
+
 function TopAppBar() {
   return (
     <header className="appbar">
+      <div className="win-dots"><span className="wd r"></span><span className="wd y"></span><span className="wd g"></span></div>
       <div className="brand">
         <div className="badge"><Icon name="terminal" /></div>
         <div className="word">Spring AI <span className="accent">Console</span></div>
       </div>
       <div className="spacer"></div>
+      <ThemeSwitch />
       <div className="chips">
         <span className="stat-chip">Spring Boot 4.0.6</span>
         <span className="stat-chip">Spring AI 2.0.0-M8</span>
