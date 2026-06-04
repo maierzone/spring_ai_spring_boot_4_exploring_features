@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spring AI Console — Wordmark</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+<style>
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--background);
+    font-family: var(--font-sans);
+    color: var(--on-surface);
+    display: grid;
+    place-items: center;
+    gap: 0;
+  }
+  .stack { display: flex; flex-direction: column; align-items: center; gap: 28px; }
+  .lockup { display: flex; align-items: center; gap: 14px; }
+  .badge {
+    width: 52px; height: 52px;
+    border-radius: var(--radius-md);
+    background: var(--primary);
+    color: var(--on-primary);
+    display: grid; place-items: center;
+    box-shadow: var(--elevation-2);
+  }
+  .badge .material-symbols-rounded { font-size: 30px; font-variation-settings: 'FILL' 1, 'wght' 500; }
+  .word { font: var(--headline-large); letter-spacing: -.02em; }
+  .word .accent { color: var(--primary); }
+  .lockup.dark { background: var(--console-bg); padding: 22px 28px; border-radius: var(--radius-lg); }
+  .lockup.dark .word { color: #fff; }
+  .lockup.dark .badge { background: #fff; color: var(--primary); }
+  .caption { font: var(--code-small); color: var(--muted); letter-spacing: .04em; }
+</style>
+</head>
+<body>
+  <div class="stack">
+    <div class="lockup">
+      <div class="badge"><span class="material-symbols-rounded">terminal</span></div>
+      <div class="word">Spring AI <span class="accent">Console</span></div>
+    </div>
+    <div class="lockup dark">
+      <div class="badge"><span class="material-symbols-rounded">terminal</span></div>
+      <div class="word">Spring AI <span class="accent" style="color:var(--marine-70)">Console</span></div>
+    </div>
+    <div class="caption">spring-ai@demo:~/features$ ./dev-console</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<!-- @dsCard group="Colors" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; background:var(--surface); font-family:var(--font-sans); padding:26px 32px; }
+  .label { font:var(--label-small); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+  .ramp { display:flex; border-radius:var(--radius-sm); overflow:hidden; box-shadow:var(--elevation-1); }
+  .sw { flex:1; height:64px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px; font:var(--code-small); }
+</style></head>
+<body>
+  <div class="label">Marine — primary tonal scale</div>
+  <div class="ramp">
+    <div class="sw" style="background:var(--marine-10);color:#fff">10</div>
+    <div class="sw" style="background:var(--marine-20);color:#fff">20</div>
+    <div class="sw" style="background:var(--marine-30);color:#fff">30</div>
+    <div class="sw" style="background:var(--marine-40);color:#fff">40</div>
+    <div class="sw" style="background:var(--marine-50);color:#fff">50</div>
+    <div class="sw" style="background:var(--marine-60);color:#fff">60</div>
+    <div class="sw" style="background:var(--marine-70);color:#08203a">70</div>
+    <div class="sw" style="background:var(--marine-80);color:#08203a">80</div>
+    <div class="sw" style="background:var(--marine-90);color:#08203a">90</div>
+    <div class="sw" style="background:var(--marine-95);color:#08203a">95</div>
+  </div>
+  <div style="margin-top:10px;font:var(--code-small);color:var(--muted)">40 = <b style="color:var(--marine-40)">#1B4D89</b> primary · 90 = container · used sparingly as the one accent</div>
+</body></html>

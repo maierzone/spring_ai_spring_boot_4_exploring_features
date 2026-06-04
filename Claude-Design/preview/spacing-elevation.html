@@ -1,0 +1,23 @@
+<!-- @dsCard group="Spacing" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; background:var(--background); font-family:var(--font-sans); padding:30px 32px; }
+  .label { font:var(--label-small); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:24px; }
+  .row { display:flex; gap:26px; }
+  .item { display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .e { width:78px; height:56px; background:var(--surface); border-radius:var(--radius-md); }
+  .cap { font:var(--code-small); color:var(--muted); }
+</style></head>
+<body>
+  <div class="label">Elevation — M3 levels 0–5</div>
+  <div class="row">
+    <div class="item"><div class="e" style="box-shadow:var(--elevation-0);outline:1px solid var(--outline-variant)"></div><div class="cap">0</div></div>
+    <div class="item"><div class="e" style="box-shadow:var(--elevation-1)"></div><div class="cap">1</div></div>
+    <div class="item"><div class="e" style="box-shadow:var(--elevation-2)"></div><div class="cap">2</div></div>
+    <div class="item"><div class="e" style="box-shadow:var(--elevation-3)"></div><div class="cap">3</div></div>
+    <div class="item"><div class="e" style="box-shadow:var(--elevation-4)"></div><div class="cap">4</div></div>
+    <div class="item"><div class="e" style="box-shadow:var(--elevation-5)"></div><div class="cap">5</div></div>
+  </div>
+</body></html>

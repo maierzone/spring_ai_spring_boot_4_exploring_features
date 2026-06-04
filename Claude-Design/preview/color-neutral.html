@@ -1,0 +1,26 @@
+<!-- @dsCard group="Colors" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; background:var(--surface); font-family:var(--font-sans); padding:26px 32px; }
+  .label { font:var(--label-small); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:14px; }
+  .ramp { display:flex; border-radius:var(--radius-sm); overflow:hidden; box-shadow:var(--elevation-1); }
+  .sw { flex:1; height:64px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:6px; font:var(--code-small); }
+</style></head>
+<body>
+  <div class="label">Neutral — ink to white (cool-tinted)</div>
+  <div class="ramp">
+    <div class="sw" style="background:var(--neutral-10);color:#fff">10</div>
+    <div class="sw" style="background:var(--neutral-20);color:#fff">20</div>
+    <div class="sw" style="background:var(--neutral-30);color:#fff">30</div>
+    <div class="sw" style="background:var(--neutral-40);color:#fff">40</div>
+    <div class="sw" style="background:var(--neutral-50);color:#fff">50</div>
+    <div class="sw" style="background:var(--neutral-60);color:#11161D">60</div>
+    <div class="sw" style="background:var(--neutral-80);color:#11161D">80</div>
+    <div class="sw" style="background:var(--neutral-90);color:#11161D">90</div>
+    <div class="sw" style="background:var(--neutral-95);color:#11161D">95</div>
+    <div class="sw" style="background:var(--neutral-99);color:#11161D;box-shadow:inset 0 0 0 1px var(--outline-variant)">99</div>
+  </div>
+  <div style="margin-top:10px;font:var(--code-small);color:var(--muted)">Ink <b style="color:var(--neutral-10)">#11161D</b> · body text 10–40 · borders 80–90 · surfaces 95–100</div>
+</body></html>

@@ -1,0 +1,233 @@
+/* ============================================================================
+   SPRING AI CONSOLE — Design Tokens
+   A Material Design 3-equivalent system for the Spring AI Developer Console.
+   Palette: black, white, marine blue. Clean surfaces, soft elevation, calm
+   developer-tooling atmosphere.
+   ----------------------------------------------------------------------------
+   Fonts are loaded from Google Fonts (see @import below). If you need an
+   offline / production build, drop the .woff2/.ttf files into ./fonts and
+   swap the @import for @font-face rules.
+   ============================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,400..600&family=JetBrains+Mono:ital,wght@0,400..700;1,400..600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+
+:root {
+  /* ---------------------------------------------------------------------- */
+  /* MARINE — primary tonal palette (M3-style tones 0–100)                  */
+  /* ---------------------------------------------------------------------- */
+  --marine-0:   #000000;
+  --marine-10:  #001B3D;
+  --marine-20:  #0A2E54;
+  --marine-30:  #173E6B;
+  --marine-40:  #1B4D89;   /* PRIMARY — filled buttons, key accents          */
+  --marine-50:  #2A62A8;
+  --marine-60:  #4C7EC0;
+  --marine-70:  #7099D1;
+  --marine-80:  #A6C2E6;
+  --marine-90:  #D6E3F7;   /* primary container                              */
+  --marine-95:  #EBF1FB;
+  --marine-99:  #FBFCFF;
+  --marine-100: #FFFFFF;
+
+  /* ---------------------------------------------------------------------- */
+  /* NEUTRAL — black → white, cool-tinted greys                             */
+  /* ---------------------------------------------------------------------- */
+  --neutral-0:   #000000;
+  --neutral-10:  #11161D;   /* near-black ink                                */
+  --neutral-20:  #262B32;
+  --neutral-30:  #3C424A;
+  --neutral-40:  #545A63;
+  --neutral-50:  #6D737C;
+  --neutral-60:  #878D96;
+  --neutral-70:  #A2A8B1;
+  --neutral-80:  #BEC4CD;
+  --neutral-90:  #DCE2EA;
+  --neutral-95:  #ECF0F5;
+  --neutral-98:  #F6F8FB;
+  --neutral-99:  #FAFBFD;
+  --neutral-100: #FFFFFF;
+
+  /* ---------------------------------------------------------------------- */
+  /* SEMANTIC COLOR ROLES (M3 naming)                                       */
+  /* ---------------------------------------------------------------------- */
+  --primary:               var(--marine-40);
+  --on-primary:            var(--marine-100);
+  --primary-container:     var(--marine-90);
+  --on-primary-container:  var(--marine-10);
+  --primary-hover:         var(--marine-30);   /* state layer darken         */
+
+  --secondary:             #41576E;            /* muted steel-blue           */
+  --on-secondary:          #FFFFFF;
+  --secondary-container:   #DCE6F2;
+  --on-secondary-container:#16222E;
+
+  --surface:               #FFFFFF;
+  --surface-dim:           #E8EBF0;
+  --surface-bright:        #FCFDFF;
+  --surface-container-low: #F6F8FB;
+  --surface-container:     #F0F3F8;
+  --surface-container-high:#EAEEF4;
+  --background:            #F4F6FA;            /* app canvas                 */
+
+  --on-surface:            var(--neutral-10);
+  --on-surface-variant:    var(--neutral-40);  /* secondary text             */
+  --muted:                 var(--neutral-50);
+
+  --outline:               #C2CBD6;            /* borders                    */
+  --outline-variant:       #DCE2EA;            /* subtle dividers            */
+
+  /* Code console surface (the one intentionally dark spot) */
+  --console-bg:            #0C1622;
+  --console-fg:            #C7D6E6;
+  --console-accent:        var(--marine-70);
+
+  /* Status / semantic */
+  --error:             #BA1A1A;
+  --on-error:          #FFFFFF;
+  --error-container:   #FFDAD6;
+  --on-error-container:#410002;
+
+  --success:           #1E7D45;
+  --success-container: #B7F0C9;
+  --on-success-container:#00210F;
+
+  --warning:           #8A5A00;
+  --warning-container: #FFE8C2;
+  --on-warning-container:#2C1700;
+
+  --info:              #0A6E8F;
+  --info-container:    #C3ECFA;
+
+  /* ---------------------------------------------------------------------- */
+  /* TYPE FAMILIES                                                          */
+  /* ---------------------------------------------------------------------- */
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* ---------------------------------------------------------------------- */
+  /* SHAPE SCALE (M3 corners)                                               */
+  /* ---------------------------------------------------------------------- */
+  --radius-none: 0px;
+  --radius-xs:   4px;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   28px;
+  --radius-full: 999px;
+
+  /* ---------------------------------------------------------------------- */
+  /* SPACING — 4px base grid                                                */
+  /* ---------------------------------------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---------------------------------------------------------------------- */
+  /* ELEVATION — M3 levels 0–5 (soft, marine-tinted shadows)                */
+  /* ---------------------------------------------------------------------- */
+  --elevation-0: none;
+  --elevation-1: 0 1px 2px rgba(13, 27, 42, .06), 0 1px 3px 1px rgba(13, 27, 42, .05);
+  --elevation-2: 0 1px 2px rgba(13, 27, 42, .08), 0 2px 6px 2px rgba(13, 27, 42, .06);
+  --elevation-3: 0 4px 8px 3px rgba(13, 27, 42, .07), 0 1px 3px rgba(13, 27, 42, .10);
+  --elevation-4: 0 6px 10px 4px rgba(13, 27, 42, .08), 0 2px 3px rgba(13, 27, 42, .10);
+  --elevation-5: 0 8px 12px 6px rgba(13, 27, 42, .09), 0 4px 4px rgba(13, 27, 42, .12);
+
+  /* ---------------------------------------------------------------------- */
+  /* MOTION (M3 emphasized easing)                                          */
+  /* ---------------------------------------------------------------------- */
+  --ease-standard:   cubic-bezier(.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(.05, .7, .1, 1);
+  --dur-short:  150ms;
+  --dur-medium: 250ms;
+  --dur-long:   400ms;
+
+  /* State layer opacities (M3) */
+  --state-hover:   0.08;
+  --state-focus:   0.10;
+  --state-press:   0.10;
+}
+
+/* ============================================================================
+   TYPE SCALE — M3 roles mapped to semantic tags
+   Display / Headline / Title / Body / Label, plus a mono "code" role.
+   ============================================================================ */
+
+:root {
+  --display-large:   400 57px/1.05 var(--font-sans);
+  --display-medium:  400 45px/1.08 var(--font-sans);
+  --display-small:   500 36px/1.12 var(--font-sans);
+
+  --headline-large:  600 32px/1.15 var(--font-sans);
+  --headline-medium: 600 28px/1.20 var(--font-sans);
+  --headline-small:  600 24px/1.25 var(--font-sans);
+
+  --title-large:     600 22px/1.27 var(--font-sans);
+  --title-medium:    600 16px/1.40 var(--font-sans);
+  --title-small:     600 14px/1.40 var(--font-sans);
+
+  --body-large:      400 16px/1.55 var(--font-sans);
+  --body-medium:     400 14px/1.55 var(--font-sans);
+  --body-small:      400 12px/1.45 var(--font-sans);
+
+  --label-large:     600 14px/1.30 var(--font-sans);
+  --label-medium:    600 12px/1.30 var(--font-sans);
+  --label-small:     600 11px/1.30 var(--font-sans);
+
+  --code-medium:     500 13px/1.55 var(--font-mono);
+  --code-small:      500 12px/1.50 var(--font-mono);
+}
+
+/* Optional convenience classes ------------------------------------------- */
+.t-display-large   { font: var(--display-large);   letter-spacing: -.02em; }
+.t-display-medium  { font: var(--display-medium);  letter-spacing: -.015em; }
+.t-display-small   { font: var(--display-small);   letter-spacing: -.01em; }
+.t-headline-large  { font: var(--headline-large);  letter-spacing: -.01em; }
+.t-headline-medium { font: var(--headline-medium); letter-spacing: -.005em; }
+.t-headline-small  { font: var(--headline-small); }
+.t-title-large     { font: var(--title-large); }
+.t-title-medium    { font: var(--title-medium); }
+.t-title-small     { font: var(--title-small); }
+.t-body-large      { font: var(--body-large); }
+.t-body-medium     { font: var(--body-medium); }
+.t-body-small      { font: var(--body-small); }
+.t-label-large     { font: var(--label-large);  letter-spacing: .01em; }
+.t-label-medium    { font: var(--label-medium); letter-spacing: .03em; }
+.t-label-small     { font: var(--label-small);  letter-spacing: .05em; text-transform: uppercase; }
+.t-code            { font: var(--code-medium); }
+
+/* ============================================================================
+   MATERIAL SYMBOLS — base class (the Google css2 endpoint ships only the
+   @font-face, so the helper class must be declared here). Pair with the link:
+   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+   ============================================================================ */
+.material-symbols-rounded {
+  font-family: 'Material Symbols Rounded';
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* The mono "eyebrow" used on feature cards & section labels */
+.t-eyebrow {
+  font: var(--label-small);
+  font-family: var(--font-mono);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+}

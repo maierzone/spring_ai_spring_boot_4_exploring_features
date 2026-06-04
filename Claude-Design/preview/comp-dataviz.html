@@ -1,0 +1,29 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; background:var(--surface); font-family:var(--font-sans); padding:26px 32px; display:flex; flex-direction:column; gap:20px; }
+  .label { font:var(--label-small); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+  .segments { display:flex; gap:6px; }
+  .seg { flex:1; height:34px; border-radius:var(--radius-xs); background:var(--surface-container-high); display:flex; align-items:center; justify-content:center; font:var(--label-small); font-family:var(--font-mono); color:var(--muted); }
+  .seg.active { color:#fff; }
+  .gauge { display:flex; align-items:center; gap:14px; }
+  .gtrack { width:170px; height:8px; border-radius:var(--radius-full); background:linear-gradient(90deg,#ef4444,#eab308,#22c55e); position:relative; }
+  .gdot { position:absolute; top:50%; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:var(--elevation-2); transform:translate(-50%,-50%); }
+</style></head>
+<body>
+  <div>
+    <div class="label">Priority — segmented bar</div>
+    <div class="segments">
+      <div class="seg active" style="background:#22c55e">LOW</div>
+      <div class="seg active" style="background:#eab308">MEDIUM</div>
+      <div class="seg active" style="background:#f97316">HIGH</div>
+      <div class="seg">URGENT</div>
+    </div>
+  </div>
+  <div>
+    <div class="label">Sentiment — gauge</div>
+    <div class="gauge"><div class="gtrack"><div class="gdot" style="left:78%"></div></div><span style="font:var(--label-large);color:#1E7D45">POSITIVE</span></div>
+  </div>
+</body></html>

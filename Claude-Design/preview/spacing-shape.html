@@ -1,0 +1,23 @@
+<!-- @dsCard group="Spacing" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body { margin:0; background:var(--surface); font-family:var(--font-sans); padding:28px 32px; }
+  .label { font:var(--label-small); letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin-bottom:20px; }
+  .row { display:flex; gap:20px; align-items:flex-end; }
+  .item { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .shape { width:72px; height:54px; background:var(--marine-90); box-shadow:inset 0 0 0 1.5px var(--marine-60); }
+  .cap { font:var(--code-small); color:var(--muted); }
+</style></head>
+<body>
+  <div class="label">Shape — corner radii</div>
+  <div class="row">
+    <div class="item"><div class="shape" style="border-radius:var(--radius-xs)"></div><div class="cap">xs · 4</div></div>
+    <div class="item"><div class="shape" style="border-radius:var(--radius-sm)"></div><div class="cap">sm · 8</div></div>
+    <div class="item"><div class="shape" style="border-radius:var(--radius-md)"></div><div class="cap">md · 12</div></div>
+    <div class="item"><div class="shape" style="border-radius:var(--radius-lg)"></div><div class="cap">lg · 16</div></div>
+    <div class="item"><div class="shape" style="border-radius:var(--radius-xl)"></div><div class="cap">xl · 28</div></div>
+    <div class="item"><div class="shape" style="width:54px;border-radius:var(--radius-full)"></div><div class="cap">full</div></div>
+  </div>
+</body></html>

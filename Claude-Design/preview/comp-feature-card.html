@@ -1,0 +1,28 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1" />
+<style>
+  body { margin:0; background:var(--background); font-family:var(--font-sans); padding:26px 32px; }
+  .card { background:var(--surface); border-radius:var(--radius-lg); box-shadow:var(--elevation-1); padding:22px 24px; }
+  .head { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+  .ic { width:40px; height:40px; border-radius:var(--radius-md); background:var(--primary-container); color:var(--on-primary-container); display:grid; place-items:center; }
+  .material-symbols-rounded { font-size:22px; }
+  .eyebrow { font:var(--label-small); font-family:var(--font-mono); letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+  h2 { margin:2px 0 0; font:var(--title-large); }
+  p { margin:10px 0 16px; color:var(--on-surface-variant); font:var(--body-medium); max-width:54ch; }
+  code { font:var(--code-small); background:var(--marine-95); color:var(--marine-30); padding:2px 6px; border-radius:var(--radius-xs); }
+  .btn { display:inline-flex; align-items:center; gap:8px; font:var(--label-large); border-radius:var(--radius-full); padding:9px 20px; border:0; background:var(--primary); color:#fff; box-shadow:var(--elevation-1); }
+  .btn .material-symbols-rounded { font-size:18px; }
+</style></head>
+<body>
+  <div class="card">
+    <div class="head">
+      <div class="ic"><span class="material-symbols-rounded">account_tree</span></div>
+      <div><div class="eyebrow">04_structured_output</div><h2>Structured Output · Ticket-Analyse</h2></div>
+    </div>
+    <p>Freitext rein → typisierte Analyse (Kategorie, Priorität, Sentiment). Ruft <code>POST /api/tickets/analyze</code> auf.</p>
+    <button class="btn"><span class="material-symbols-rounded">bolt</span>analyze</button>
+  </div>
+</body></html>
