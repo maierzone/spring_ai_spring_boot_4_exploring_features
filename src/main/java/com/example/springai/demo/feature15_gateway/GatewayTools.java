@@ -84,13 +84,15 @@ public class GatewayTools {
         return route("joke", joke.joke(thema, sprache));
     }
 
-    @Tool(description = "Beantwortet Fragen zum Produktkatalog/Lagerbestand per Tool-Calling.")
-    public String produktkatalog(
-            @ToolParam(description = "Frage zu Produkten/Lagerbestand") String nachricht) {
+    @Tool(description = "Fuehrt eGK-Einzelsatz-Pruefungen per Tool-Calling aus: KVNR-/Luhn-Pruefziffer "
+            + "validieren, eGK-Kartenstatus, ICD-10-Code aufloesen, Zertifikats-Gueltigkeit.")
+    public String egkPruefung(
+            @ToolParam(description = "Frage zu einer konkreten Nummer/Karte/Diagnose/Zertifikat") String nachricht) {
         return route("tools", tools.ask(nachricht));
     }
 
-    @Tool(description = "Beantwortet Fragen zu Spring AI aus dem Wissensspeicher (RAG).")
+    @Tool(description = "Beantwortet Wissensfragen zu Telematik-/eGK-Fachbegriffen aus dem "
+            + "Wissensspeicher (RAG).")
     public String wissensspeicher(@ToolParam(description = "Wissensfrage") String frage) {
         return route("rag", rag.ask(frage));
     }

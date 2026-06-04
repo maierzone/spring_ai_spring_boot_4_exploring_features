@@ -135,7 +135,7 @@ function StructuredPanel() {
 
 // --- Tool Calling ---------------------------------------------------------
 function ToolsPanel() {
-  const [q, setQ] = useState("Wie viele Monitore sind auf Lager?");
+  const [q, setQ] = useState("Ist die KVNR A123456780 gültig?");
   const [out, setOut] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
@@ -153,10 +153,10 @@ function ToolsPanel() {
   });
 
   return (
-    <Panel icon="construction" eyebrow="06_tool_calling — product-catalog.sh" title="Tool Calling · Produktkatalog"
-      hint={<>Das Modell ruft bei Bedarf den Katalog-Service auf. Ruft <span className="inline-code">GET /api/tools</span> auf.</>}>
+    <Panel icon="construction" eyebrow="06_tool_calling — egk-checks.sh" title="Tool Calling · eGK-Einzelsatz-Checks"
+      hint={<>Das Modell wählt das passende Prüf-Tool: KVNR-/Luhn-Prüfziffer, eGK-Kartenstatus, ICD-10 auflösen, Zertifikats-Gültigkeit. Ruft <span className="inline-code">GET /api/tools</span> auf.</>}>
       <label className="field-label">Frage</label>
-      <div className="field"><Icon name="inventory_2" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
+      <div className="field"><Icon name="badge" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
       <div className="row"><Button icon="play_arrow" busy={busy} onClick={go}>run</Button></div>
       <ConsoleOut text={out} />
       <ConsoleOut text={err} error />
@@ -166,7 +166,7 @@ function ToolsPanel() {
 
 // --- RAG ------------------------------------------------------------------
 function RagPanel() {
-  const [q, setQ] = useState("Was ist Tool Calling?");
+  const [q, setQ] = useState("Was bedeutet der eGK-Status GESPERRT?");
   const [out, setOut] = useState(null);
   const [sources, setSources] = useState(null);
   const [err, setErr] = useState(null);
@@ -196,8 +196,8 @@ function RagPanel() {
   });
 
   return (
-    <Panel icon="manage_search" eyebrow="07_rag — knowledge-base.sh" title="RAG · Wissensspeicher"
-      hint={<>Antwort auf Basis abgerufener Dokumente. <span className="inline-code">GET /api/rag</span> (Antwort) bzw. <span className="inline-code">/api/rag/sources</span> (nur Quellen, ohne API-Key).</>}>
+    <Panel icon="manage_search" eyebrow="07_rag — telematik-wissen.sh" title="RAG · Telematik-Wissensspeicher"
+      hint={<>Antwort auf Basis abgerufener Telematik-/eGK-Fachbegriffe (KVNR, Kartenstatus, Zertifikatstypen, ICD-10). <span className="inline-code">GET /api/rag</span> (Antwort) bzw. <span className="inline-code">/api/rag/sources</span> (nur Quellen, ohne API-Key).</>}>
       <label className="field-label">Frage</label>
       <div className="field"><Icon name="quiz" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
       <div className="row">
@@ -254,5 +254,141 @@ function DbPanel() {
   );
 }
 
-const PANELS = { gateway: GatewayPanel, structured: StructuredPanel, tools: ToolsPanel, rag: RagPanel, db: DbPanel };
+// --- Evaluator-Optimizer (F16) --------------------------------------------
+function EvaluatorPanel() {
+  const [q, setQ] = useState("Wie viele Versicherte sind älter als 65 Jahre?");
+  const [out, setOut] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, run] = useFetch();
+
+  const go = () => run(async () => {
+    setErr(null); setOut(null);
+    try {
+      const res = await fetch("/api/evaluator/sql?question=" + encodeURIComponent(q));
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
+      setOut(await res.json());
+    } catch (e) {
+      setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
+    }
+  });
+
+  return (
+    <Panel icon="autorenew" eyebrow="16_evaluator_optimizer — self-correct.sh" title="Evaluator-Optimizer · Selbstkorrigierendes SQL"
+      hint={<>Generator erzeugt SQL, ein Richter bewertet es gegen das Schema; bei Mängeln fließt die Kritik in einen neuen Versuch – bis akzeptiert oder Limit. Ruft <span className="inline-code">GET /api/evaluator/sql</span> auf.</>}>
+      <label className="field-label">Frage</label>
+      <div className="field"><Icon name="rule" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
+      <div className="row"><Button icon="play_arrow" busy={busy} onClick={go}>optimize</Button></div>
+      {out && (
+        <div>
+          <div className="viz" style={{ gridTemplateColumns: "1fr 1fr" }}>
+            <div className="viz-card">
+              <div className="vc-label">Ergebnis</div>
+              <span className="cat-badge" style={{ background: out.success ? "#1E7D45" : "#BA1A1A" }}>
+                {out.success ? "akzeptiert" : "nicht konvergiert"}
+              </span>
+            </div>
+            <div className="viz-card">
+              <div className="vc-label">Iterationen</div>
+              <span className="cat-badge" style={{ background: "#1B4D89" }}>{out.attempts.length}</span>
+            </div>
+          </div>
+          {out.attempts.map((a) => (
+            <div className="src" key={a.iteration} style={{ animationDelay: ((a.iteration - 1) * .08) + "s" }}>
+              <div className="src-head">
+                <span className="src-score" style={{ background: a.evaluation.valid ? "#B7F0C9" : "#FFDAD6", color: a.evaluation.valid ? "#00210F" : "#410002" }}>
+                  #{a.iteration} {a.evaluation.valid ? "valid" : "verworfen"}
+                </span>
+              </div>
+              <div className="console" style={{ marginTop: 8 }}>{a.sql}</div>
+              {!a.evaluation.valid && <div className="src-text" style={{ marginTop: 8 }}>↳ {a.evaluation.feedback}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+      <ConsoleOut text={err} error />
+    </Panel>
+  );
+}
+
+// --- pgvector (F17) -------------------------------------------------------
+function PgVectorPanel() {
+  const [info, setInfo] = useState(null);
+  const [text, setText] = useState("Die eGK trägt die Zertifikate EGK_AUT und EGK_ENC.");
+  const [addCat, setAddCat] = useState("egk");
+  const [query, setQuery] = useState("Welche Zertifikate liegen auf der Karte?");
+  const [searchCat, setSearchCat] = useState("");
+  const [hits, setHits] = useState(null);
+  const [msg, setMsg] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, run] = useFetch();
+
+  const loadInfo = () => run(async () => {
+    setErr(null);
+    try {
+      const res = await fetch("/api/pgvector/info");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      setInfo((await res.json()).vectorStore);
+    } catch (e) { setErr(e.message); }
+  });
+
+  const add = () => run(async () => {
+    setErr(null); setMsg(null);
+    try {
+      const res = await fetch("/api/pgvector/documents?text=" + encodeURIComponent(text)
+        + "&category=" + encodeURIComponent(addCat), { method: "POST" });
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
+      const body = await res.json();
+      setMsg("Abgelegt: id=" + body.id + " (category=" + body.category + ")");
+    } catch (e) { setErr(e.message); }
+  });
+
+  const search = () => run(async () => {
+    setErr(null); setHits(null);
+    try {
+      let url = "/api/pgvector/search?query=" + encodeURIComponent(query) + "&topK=3";
+      if (searchCat.trim()) url += "&category=" + encodeURIComponent(searchCat.trim());
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
+      setHits(await res.json());
+    } catch (e) { setErr(e.message); }
+  });
+
+  return (
+    <Panel icon="database" eyebrow="17_pgvector — persistent-store.sh" title="pgvector · Persistenter VectorStore"
+      hint={<>Derselbe <span className="inline-code">VectorStore</span>-Code, aber persistent in PostgreSQL – mit Metadaten-Filter auf <span className="inline-code">category</span>. Ohne <span className="inline-code">postgres</span>-Profil läuft der In-Memory-Store. Endpunkte: <span className="inline-code">/api/pgvector/info · /documents · /search</span>.</>}>
+      <div className="row"><Button variant="outlined" icon="info" busy={busy} onClick={loadInfo}>info</Button>
+        {info && <span className="stat-chip">aktiv: {info}</span>}</div>
+
+      <label className="field-label" style={{ marginTop: 18 }}>Dokument ablegen</label>
+      <div className="field"><textarea value={text} onChange={e => setText(e.target.value)} /></div>
+      <div className="row">
+        <div className="field" style={{ flex: "0 0 180px" }}><Icon name="label" /><input value={addCat} onChange={e => setAddCat(e.target.value)} placeholder="category" /></div>
+        <Button icon="add" busy={busy} onClick={add}>add</Button>
+      </div>
+      {msg && <ConsoleOut text={msg} />}
+
+      <label className="field-label" style={{ marginTop: 18 }}>Ähnlichkeitssuche</label>
+      <div className="field"><Icon name="search" /><input value={query} onChange={e => setQuery(e.target.value)} /></div>
+      <div className="row">
+        <div className="field" style={{ flex: "0 0 180px" }}><Icon name="filter_alt" /><input value={searchCat} onChange={e => setSearchCat(e.target.value)} placeholder="category (optional)" /></div>
+        <Button icon="travel_explore" busy={busy} onClick={search}>search</Button>
+      </div>
+      {hits && (hits.length ? hits.map((h, i) => (
+        <div className="src" key={i} style={{ animationDelay: (i * .08) + "s" }}>
+          <div className="src-head">
+            <span className="src-score">score {Number(h.score).toFixed(3)}</span>
+            <span className="src-file">category: {h.category}</span>
+          </div>
+          <div className="src-text">{h.text}</div>
+        </div>
+      )) : <ConsoleOut text="Keine Treffer." />)}
+      <ConsoleOut text={err} error />
+    </Panel>
+  );
+}
+
+const PANELS = {
+  gateway: GatewayPanel, structured: StructuredPanel, tools: ToolsPanel, rag: RagPanel,
+  db: DbPanel, evaluator: EvaluatorPanel, pgvector: PgVectorPanel,
+};
 Object.assign(window, { PANELS });

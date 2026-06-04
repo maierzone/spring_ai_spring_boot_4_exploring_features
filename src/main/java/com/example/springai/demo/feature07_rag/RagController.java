@@ -20,8 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
  * sie als Kontext an den Prompt. Das Modell antwortet dann auf Basis dieses
  * abgerufenen Wissens – das reduziert Halluzinationen und hält Antworten aktuell.</p>
  *
- * <p>Der Vektorspeicher wird in {@code DemoBeans} mit einigen Spring-AI-Fakten
- * vorbefüllt. Beispiel: {@code GET /api/rag?question=Was ist der ChatClient?}</p>
+ * <p>Der Vektorspeicher wird in {@code DemoBeans} mit Telematik-/eGK-Fachbegriffen
+ * vorbefüllt (KVNR, eGK-Status, Zertifikatstypen, ICD-10 …) – passend zum
+ * Datenbestand der Features 14–17. Beispiel:
+ * {@code GET /api/rag?question=Was bedeutet der eGK-Status GESPERRT?}</p>
  */
 @RestController
 public class RagController {
@@ -42,7 +44,7 @@ public class RagController {
     }
 
     @GetMapping("/api/rag")
-    public String ask(@RequestParam(defaultValue = "Was ist Spring AI?") String question) {
+    public String ask(@RequestParam(defaultValue = "Was bedeutet der eGK-Status GESPERRT?") String question) {
         return chatClient.prompt()
                 .user(question)
                 .call()
@@ -59,7 +61,7 @@ public class RagController {
      */
     @GetMapping("/api/rag/sources")
     public List<RetrievedSource> sources(
-            @RequestParam(defaultValue = "Was ist RAG?") String question,
+            @RequestParam(defaultValue = "Wozu dient der Heilberufsausweis?") String question,
             @RequestParam(defaultValue = "2") int topK) {
 
         List<Document> hits = vectorStore.similaritySearch(

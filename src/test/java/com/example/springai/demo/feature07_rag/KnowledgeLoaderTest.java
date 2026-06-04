@@ -17,17 +17,17 @@ class KnowledgeLoaderTest {
     @Test
     void zerlegtWissensdateiInAbsaetzeMitQuelle() {
         List<Document> documents = KnowledgeLoader.loadParagraphs(
-                new ClassPathResource("knowledge/spring-ai-faq.md"));
+                new ClassPathResource("knowledge/telematik-wissen.md"));
 
         // Mehrere Absätze, keine leeren.
         assertThat(documents).hasSizeGreaterThanOrEqualTo(5);
         assertThat(documents).allSatisfy(doc -> {
             assertThat(doc.getText()).isNotBlank();
-            assertThat(doc.getMetadata()).containsEntry("source", "spring-ai-faq.md");
+            assertThat(doc.getMetadata()).containsEntry("source", "telematik-wissen.md");
         });
 
         // Inhaltliche Stichprobe.
         assertThat(documents).anySatisfy(doc ->
-                assertThat(doc.getText()).contains("Retrieval Augmented Generation"));
+                assertThat(doc.getText()).contains("Krankenversichertennummer"));
     }
 }

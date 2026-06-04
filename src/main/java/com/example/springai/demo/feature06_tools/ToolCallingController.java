@@ -8,37 +8,42 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * FEATURE 6 – Tool / Function Calling.
  *
- * <p>Mit Tools kann das Modell die Grenzen seines Trainingswissens überschreiten:
- * Es darf während der Beantwortung eigene Java-Methoden aufrufen (z.&nbsp;B. um
- * aktuelle Daten, Datenbank- oder API-Ergebnisse zu holen). Hier stellen wir die
- * {@link DateTimeTools} bereit – fragt man nach dem aktuellen Datum, ruft das
- * Modell selbstständig das passende Tool auf.</p>
+ * <p>Mit Tools kann das Modell die Grenzen seines Trainingswissens ueberschreiten:
+ * Es darf waehrend der Beantwortung eigene Java-Methoden aufrufen (z.&nbsp;B. um
+ * Datenbank- oder API-Ergebnisse zu holen). Hier bekommt es die
+ * {@link EgkCheckTools} – fachliche Einzelsatz-Pruefungen rund um die eGK
+ * (KVNR-/Luhn-Pruefziffer, Kartenstatus, ICD-10-Aufloesung, Zertifikats-Gueltigkeit)
+ * – sowie die {@link DateTimeTools} fuer Datum/Wochentag. Das Modell waehlt
+ * selbststaendig das passende Tool und dessen Argumente.</p>
  *
- * <p>Beispiel: {@code GET /api/tools?message=Welcher Wochentag ist der 2026-12-24?}</p>
+ * <p>Abgrenzung zu Feature 14: dort beantwortet das Modell Aggregations-Fragen
+ * ("wie viele", "Verteilung"); hier geht es um genau einen Satz/eine Nummer.</p>
+ *
+ * <p>Beispiel: {@code GET /api/tools?message=Ist die KVNR A123456780 gueltig?}</p>
  */
 @RestController
 public class ToolCallingController {
 
     private final ChatClient chatClient;
-    private final ProductTools productTools;
+    private final EgkCheckTools egkCheckTools;
 
     /**
-     * {@link ProductTools} kommt per DI aus dem Spring-Kontext (kapselt einen
-     * Fach-Service). {@link DateTimeTools} hat keinen Zustand und wird einfach
-     * direkt instanziiert.
+     * {@link EgkCheckTools} kommt per DI aus dem Spring-Kontext (kapselt den
+     * {@link EgkCheckService}). {@link DateTimeTools} hat keinen Zustand und wird
+     * einfach direkt instanziiert.
      */
-    public ToolCallingController(ChatClient.Builder builder, ProductTools productTools) {
+    public ToolCallingController(ChatClient.Builder builder, EgkCheckTools egkCheckTools) {
         this.chatClient = builder.build();
-        this.productTools = productTools;
+        this.egkCheckTools = egkCheckTools;
     }
 
     @GetMapping("/api/tools")
-    public String ask(@RequestParam(defaultValue = "Wie viele Monitore sind auf Lager?") String message) {
+    public String ask(@RequestParam(defaultValue = "Ist die KVNR A123456780 gueltig?") String message) {
         return chatClient.prompt()
                 .user(message)
-                // Beide Werkzeug-Sammlungen für diese Anfrage anbieten. Das Modell
-                // wählt selbst aus, welches Tool (falls überhaupt) es aufruft.
-                .tools(productTools, new DateTimeTools())
+                // Beide Werkzeug-Sammlungen fuer diese Anfrage anbieten. Das Modell
+                // waehlt selbst aus, welches Tool (falls ueberhaupt) es aufruft.
+                .tools(egkCheckTools, new DateTimeTools())
                 .call()
                 .content();
     }

@@ -37,6 +37,8 @@ const FEATURES = [
   { id: "tools",      icon: "construction",   name: "Tool Calling",      endpoint: "/api/tools" },
   { id: "rag",        icon: "manage_search",  name: "RAG",               endpoint: "/api/rag" },
   { id: "db",         icon: "database",       name: "DB-Abfrage",        endpoint: "/api/db/ask" },
+  { id: "evaluator",  icon: "autorenew",      name: "Evaluator-Optimizer", endpoint: "/api/evaluator/sql" },
+  { id: "pgvector",   icon: "database",       name: "pgvector",          endpoint: "/api/pgvector" },
 ];
 
 function NavDrawer({ active, onSelect }) {

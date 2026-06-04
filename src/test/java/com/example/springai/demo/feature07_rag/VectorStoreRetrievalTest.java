@@ -22,14 +22,14 @@ class VectorStoreRetrievalTest {
     void aehnlichkeitssucheFindetPassendesDokument() {
         SimpleVectorStore store = SimpleVectorStore.builder(new HashingEmbeddingModel()).build();
         store.add(List.of(
-                new Document("Der ChatClient sendet Prompts an das Chat-Modell."),
-                new Document("Ein Vektorspeicher speichert Embeddings fuer die Suche."),
-                new Document("Tool Calling ruft Java-Methoden aus dem Modell heraus auf.")));
+                new Document("Die Krankenversichertennummer identifiziert einen Versicherten eindeutig."),
+                new Document("Der Heilberufsausweis weist einen Arzt persoenlich aus."),
+                new Document("Ein ICD-10-Code klassifiziert eine Diagnose maschinell auswertbar.")));
 
         List<Document> results = store.similaritySearch(
-                SearchRequest.builder().query("Wie sende ich einen Prompt mit dem ChatClient?").topK(1).build());
+                SearchRequest.builder().query("Wofuer steht die Krankenversichertennummer?").topK(1).build());
 
         assertThat(results).hasSize(1);
-        assertThat(results.get(0).getText()).contains("ChatClient");
+        assertThat(results.get(0).getText()).contains("Krankenversichertennummer");
     }
 }

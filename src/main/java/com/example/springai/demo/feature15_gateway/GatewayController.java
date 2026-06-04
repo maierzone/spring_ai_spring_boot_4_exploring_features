@@ -33,8 +33,9 @@ public class GatewayController {
             Verfuegbare Routen (Tool -> Zweck):
               chat          -> allgemeine Konversation / freie Frage
               joke          -> einen Witz erzeugen
-              tools         -> Produktkatalog / Lagerbestand
-              rag           -> Wissensfragen zu Spring AI (RAG)
+              tools         -> eGK-Einzelsatz-Pruefungen (KVNR-/Luhn-Pruefziffer, Kartenstatus,
+                               ICD-10 aufloesen, Zertifikats-Gueltigkeit)
+              rag           -> Wissensfragen zu Telematik-/eGK-Fachbegriffen (RAG)
               embeddings    -> semantische Aehnlichkeit zweier Texte
               advisors      -> Frage mit aktivierten Chat-Advisors
               mcp           -> Frage unter Nutzung entfernter MCP-Tools

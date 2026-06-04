@@ -56,7 +56,7 @@ public class DemoBeans {
 
     /**
      * In-Memory-Vektorspeicher für die RAG-Demo, vorbefüllt mit einigen
-     * Beispiel-"Wissens"-Dokumenten über Spring AI.
+     * Telematik-/eGK-Fachbegriffen als "Wissens"-Dokumenten.
      *
      * <p>{@link SimpleVectorStore} nutzt das übergebene {@link EmbeddingModel}, um
      * beim Hinzufügen jedes Dokument in einen Vektor zu übersetzen, und führt die
@@ -78,7 +78,7 @@ public class DemoBeans {
         // (siehe KnowledgeLoader). So liegt der "Content" außerhalb des Codes und
         // kann ohne Neukompilierung gepflegt werden.
         store.add(KnowledgeLoader.loadParagraphs(
-                new ClassPathResource("knowledge/spring-ai-faq.md")));
+                new ClassPathResource("knowledge/telematik-wissen.md")));
         return store;
     }
 }
