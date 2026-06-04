@@ -35,9 +35,18 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 | 12 | **Observability** – Micrometer-Metriken (Tokens/Latenz) | `GET /api/observability/ask?message=…` · `GET /api/observability/metrics` · `/actuator/metrics` | `feature12_observability` |
 | 13 | **Evaluation** – LLM-as-a-Judge gegen Halluzinationen | `GET /api/evaluate/relevancy?question=…&context=…&answer=…` | `feature13_evaluation` |
 | 17 | **pgvector** – persistenter VectorStore (PostgreSQL) | `GET /api/pgvector/search?query=…&category=…` · `POST /api/pgvector/documents?text=…&category=…` · `GET /api/pgvector/info` | `feature17_pgvector` |
+| 19 | **Moderation** – Content-Safety als Guardrail-Advisor (Claude-as-Classifier) | `GET /api/moderation?message=…` · `GET /api/moderation/check?text=…` | `feature19_moderation` |
 
 Ausführliche Erläuterung dieser drei Themenblöcke (Konzept, Code, Konfiguration,
 Fallstricke) im Handbuch: **[`docs/HANDBUCH.md`](docs/HANDBUCH.md)**.
+
+> **Hinweis zu Feature 19 (Moderation):** Anthropic bietet – anders als OpenAI/Mistral –
+> keinen dedizierten Moderation-Endpunkt, für den Spring AI ein `ModerationModel`
+> autokonfigurieren könnte. Der von Anthropic empfohlene Weg ist, **Claude selbst als
+> Klassifikator** über die normale Chat-API zu nutzen. Dieses Feature setzt das als
+> selbst geschriebenen `CallAdvisor` um, der Eingabe **und** Antwort prüft (Input-/
+> Output-Guardrail) – ohne zweiten Provider und mit demselben Anthropic-API-Key.
+> Getestet wird gegen die `ContentModerator`-Abstraktion, das Quality-Gate bleibt offline.
 
 ### Agentic Patterns (siehe Handbuch `docs/HANDBUCH-EVALUATOR-OPTIMIZER.md`)
 
@@ -160,6 +169,10 @@ curl -G "localhost:8080/api/evaluate/relevancy" \
      --data-urlencode "question=Was ist RAG?" \
      --data-urlencode "context=RAG kombiniert Retrieval mit Generation." \
      --data-urlencode "answer=RAG ruft passende Dokumente ab und nutzt sie als Kontext."
+
+# 19) Moderation – Content-Safety-Guardrail (Claude-as-Classifier, Anthropic-Key)
+curl "localhost:8080/api/moderation?message=Erklaere+kurz,+was+Content-Moderation+ist."
+curl -G "localhost:8080/api/moderation/check" --data-urlencode "text=Pruefe diesen Text bitte."
 
 # 17) pgvector – Dokument persistieren und mit Metadaten-Filter suchen (ohne API-Key)
 curl "localhost:8080/api/pgvector/info"          # aktive VectorStore-Implementierung
