@@ -81,22 +81,51 @@ function FlowChain({ flow }) {
   );
 }
 
+// Badge: Ressourcenverbrauch einer Anfrage (Token + Verarbeitungszeit) auf einen Blick.
+function MetricsBadge({ m }) {
+  if (!m) return null;
+  const hasTokens = m.totalTokens != null;
+  return (
+    <div className="metrics-badge" title="Spring AI Observability · gen_ai.client.token.usage + Verarbeitungszeit">
+      <div className="mb-item">
+        <Icon name="schedule" />
+        <span className="mb-val">{m.latencyMs}<span className="mb-unit">ms</span></span>
+        <span className="mb-label">Verarbeitung</span>
+      </div>
+      <div className="mb-sep"></div>
+      <div className="mb-item">
+        <Icon name="toll" />
+        <span className="mb-val">{hasTokens ? m.totalTokens : "—"}</span>
+        <span className="mb-label">Tokens gesamt</span>
+      </div>
+      {hasTokens && (
+        <div className="mb-split">
+          <span className="mb-chip in"><Icon name="login" />{m.inputTokens} in</span>
+          <span className="mb-chip out"><Icon name="logout" />{m.outputTokens} out</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Gate-Decider ---------------------------------------------------------
 function GatewayPanel() {
   const [q, setQ] = useState("Wie viele Versicherte haben E11.9?");
   const [out, setOut] = useState(null);
   const [flow, setFlow] = useState(null);
+  const [metrics, setMetrics] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
 
   const go = () => run(async () => {
-    setErr(null); setOut(null); setFlow(null);
+    setErr(null); setOut(null); setFlow(null); setMetrics(null);
     try {
       const res = await fetch("/api/gateway?question=" + encodeURIComponent(q));
       const body = await res.json();
       if (!res.ok) throw new Error("HTTP " + res.status);
       setOut("→ Route: " + body.route + "\n\n" + body.antwort);
       setFlow(body.flow);
+      setMetrics(body.metrics);
     } catch (e) {
       setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
     }
@@ -104,10 +133,11 @@ function GatewayPanel() {
 
   return (
     <Panel icon="hub" eyebrow="00_gate_decider — route.sh" title="Gate-Decider · KI-Router"
-      hint={<>Ein Eingang für alles: Die KI entscheidet, welches Feature zuständig ist, und delegiert an dessen Endpunkt. Ruft <span className="inline-code">GET /api/gateway</span> auf – die <b>Call-Flow</b>-Kette unten zeigt den tatsächlich durchlaufenen Methoden-Aufruf-Pfad (wie im Debugger).</>}>
+      hint={<>Ein Eingang für alles: Die KI entscheidet, welches Feature zuständig ist, und delegiert an dessen Endpunkt. Ruft <span className="inline-code">GET /api/gateway</span> auf – die <b>Call-Flow</b>-Kette unten zeigt den tatsächlich durchlaufenen Methoden-Aufruf-Pfad (wie im Debugger), das <b>Badge</b> den Token-Verbrauch &amp; die Verarbeitungszeit dieser Anfrage.</>}>
       <label className="field-label">Frage</label>
       <div className="field"><Icon name="forum" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
       <div className="row"><Button icon="alt_route" busy={busy} onClick={go}>route</Button></div>
+      <MetricsBadge m={metrics} />
       <ConsoleOut text={out} />
       <FlowChain flow={flow} />
       <ConsoleOut text={err} error />
