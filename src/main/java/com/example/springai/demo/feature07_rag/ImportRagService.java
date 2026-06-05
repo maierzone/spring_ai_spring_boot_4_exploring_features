@@ -13,9 +13,11 @@ import java.util.stream.Stream;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.transformers.TransformersEmbeddingModel;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SimpleVectorStore;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -51,9 +53,19 @@ public class ImportRagService {
     /** Gesamtzahl der Dokumente (Chunks) im Import-Store. */
     private int documentCount;
 
-    public ImportRagService(EmbeddingModel embeddingModel) {
+    public ImportRagService(@Qualifier("importEmbeddingModel") EmbeddingModel embeddingModel) {
         this.embeddingModel = embeddingModel;
         this.store = newStore();
+    }
+
+    /**
+     * Kennzeichnet, mit welchem Embedding der Import-Store arbeitet – für die
+     * Transparenz-Anzeige in der UI. Bei Hashing ist die Suche nicht semantisch.
+     */
+    public String embeddingLabel() {
+        return embeddingModel instanceof TransformersEmbeddingModel
+                ? "ONNX · semantisch (multilingual)"
+                : "Hashing · offline (nicht-semantisch)";
     }
 
     private SimpleVectorStore newStore() {
@@ -139,7 +151,10 @@ public class ImportRagService {
         String ext = extension(filename);
         if ("pdf".equals(ext)) {
             List<Document> pages = new PagePdfDocumentReader(resource).read();
-            List<Document> chunks = new TokenTextSplitter().apply(pages);
+            // Kleinere Chunks als der 800-Token-Default: die Sentence-Transformer
+            // begrenzen die Eingabe (~128 Token) und wuerden lange Chunks abschneiden.
+            // Kleinere, fokussierte Chunks verbessern die Trefferqualitaet deutlich.
+            List<Document> chunks = TokenTextSplitter.builder().withChunkSize(256).build().apply(pages);
             return chunks.stream()
                     .map(chunk -> Document.builder()
                             .text(chunk.getText())

@@ -50,6 +50,11 @@ class ImportRagServiceTest {
     }
 
     @Test
+    void offlineDefaultMeldetNichtSemantischesHashing() {
+        assertThat(newService().embeddingLabel()).contains("Hashing");
+    }
+
+    @Test
     void uploadFuegtHinzu_clearLeert() {
         ImportRagService service = newService();
 

@@ -42,6 +42,13 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api/rag/import")
 public class ImportRagController {
 
+    /**
+     * Mehr Treffer als der Spring-AI-Default (4): ein importiertes PDF zerfaellt in
+     * viele Chunks – ein groesseres Fenster erhoeht die Trefferchance ("Recall")
+     * spuerbar, ohne den Prompt zu sprengen.
+     */
+    private static final int DEFAULT_TOP_K = 8;
+
     private final ImportRagService importService;
     private final ChatClient chatClient;
 
@@ -96,13 +103,14 @@ public class ImportRagController {
         result.put("dir", importDir.toString());
         result.put("files", importService.sources());
         result.put("documents", importService.documentCount());
+        result.put("embedding", importService.embeddingLabel());
         return result;
     }
 
     @GetMapping("/sources")
     public List<RetrievedSource> sources(
             @RequestParam(defaultValue = "") String question,
-            @RequestParam(defaultValue = "3") int topK) {
+            @RequestParam(defaultValue = "" + DEFAULT_TOP_K) int topK) {
 
         List<Document> hits = importService.store().similaritySearch(
                 SearchRequest.builder().query(question).topK(topK).build());
@@ -119,7 +127,9 @@ public class ImportRagController {
     public String ask(@RequestParam String question) {
         return chatClient.prompt()
                 .user(question)
-                .advisors(QuestionAnswerAdvisor.builder(importService.store()).build())
+                .advisors(QuestionAnswerAdvisor.builder(importService.store())
+                        .searchRequest(SearchRequest.builder().topK(DEFAULT_TOP_K).build())
+                        .build())
                 .call()
                 .content();
     }

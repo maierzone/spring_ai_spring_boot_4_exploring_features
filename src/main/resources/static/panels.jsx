@@ -353,7 +353,7 @@ function RagPanel() {
   const srcImp = () => run(async () => {
     resetImpOut();
     try {
-      const res = await fetch("/api/rag/import/sources?question=" + encodeURIComponent(q) + "&topK=3");
+      const res = await fetch("/api/rag/import/sources?question=" + encodeURIComponent(q) + "&topK=8");
       if (!res.ok) throw new Error("HTTP " + res.status);
       setImpSrc(await res.json());
     } catch (e) { setImpErr(e.message); }
@@ -374,7 +374,7 @@ function RagPanel() {
 
       <div className="import-section">
         <label className="field-label">Eigene Dokumente importieren (getrennter Speicher · nur diese werden durchsucht)</label>
-        <p className="hint">Lege <span className="inline-code">.md/.txt/.pdf</span> in den Server-Ordner und lies sie ein, oder lade Datei(en) direkt hoch. Danach durchsuchen <b>ask · Import</b> / <b>sources · Import</b> ausschliesslich die importierten Dokumente. Endpunkte <span className="inline-code">/api/rag/import/folder · /upload · /sources · /ask</span>.</p>
+        <p className="hint">Lege <span className="inline-code">.md/.txt/.pdf</span> in den Server-Ordner und lies sie ein, oder lade Datei(en) direkt hoch. Danach durchsuchen <b>ask · Import</b> / <b>sources · Import</b> ausschliesslich die importierten Dokumente. Endpunkte <span className="inline-code">/api/rag/import/folder · /upload · /sources · /ask</span>. Für brauchbare Treffer in echten PDFs: <span className="inline-code">demo.rag.import-embedding=onnx</span> (lokales semantisches Embedding) – sonst arbeitet die Suche nicht-semantisch.</p>
         <div className="row">
           <Button icon="folder_open" busy={busy} onClick={scanFolder}>Ordner einlesen</Button>
           <Button variant="outlined" icon="delete_sweep" busy={busy} onClick={clearImp}>leeren</Button>
@@ -386,6 +386,7 @@ function RagPanel() {
         {imp && (
           <div className="import-stats">
             <Icon name="inventory_2" /> {imp.documents} Dokument(e) aus {imp.files.length} Quelle(n)
+            {imp.embedding && <span className="emb-chip"><Icon name="network_intelligence" />{imp.embedding}</span>}
             {imp.files.length > 0 && <span className="src-file"> · {imp.files.join(", ")}</span>}
           </div>
         )}

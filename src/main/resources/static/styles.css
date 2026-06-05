@@ -347,6 +347,12 @@ body {
   font-family: var(--mono); font-size: 12.5px; color: var(--variant);
 }
 .import-stats .material-symbols-rounded { font-size: 18px; color: var(--primary); }
+.import-stats .emb-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 9px; border-radius: 999px; background: var(--primary-container);
+  color: var(--on-primary-container); font-size: 11.5px; font-weight: 600;
+}
+.import-stats .emb-chip .material-symbols-rounded { font-size: 15px; color: var(--on-primary-container); }
 
 /* ---- Gate-Decider: Metrics-Badge (Feature 12/15) ----------------------- */
 .metrics-badge {
