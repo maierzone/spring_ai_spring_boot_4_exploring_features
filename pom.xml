@@ -103,6 +103,15 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- AspectJ/Spring-AOP fuer den Call-Flow-Tracer des Gate-Deciders
+             (Feature 15): ein @Around-Aspekt schneidet zur Laufzeit die echten
+             Methodenaufrufe unter com.example.springai.demo.* mit. In Spring Boot 4
+             heisst der frueher 'spring-boot-starter-aop' genannte Starter 'aspectj'. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aspectj</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>

@@ -43,20 +43,60 @@ function ConsoleOut({ text, error }) {
   );
 }
 
+// --- Call-Flow-Kette (echter Methoden-Aufruf-Flow, wie im Debugger) --------
+// Plaettet den CallNode-Baum in Zeilen mit ASCII-Verzweigungen (├─ / └─ / │),
+// damit die Einrueckung in der Monospace-Darstellung exakt ausgerichtet bleibt.
+function flattenFlow(node, prefix, isLast, isRoot, out) {
+  out.push({
+    branch: isRoot ? "" : prefix + (isLast ? "└─ " : "├─ "),
+    method: node.method,
+    location: node.location,
+  });
+  const childPrefix = isRoot ? "" : prefix + (isLast ? "   " : "│  ");
+  const kids = node.calls || [];
+  kids.forEach((c, i) => flattenFlow(c, childPrefix, i === kids.length - 1, false, out));
+  return out;
+}
+
+function FlowChain({ flow }) {
+  if (!flow || !flow.length) return null;
+  const lines = [];
+  flow.forEach(root => flattenFlow(root, "", true, true, lines));
+  return (
+    <div className="console-block">
+      <div className="term-bar">
+        <span className="wd r"></span><span className="wd y"></span><span className="wd g"></span>
+        <span className="tb-label">call-flow — debugger trace</span>
+      </div>
+      <div className="flow">
+        {lines.map((l, i) => (
+          <div className="flow-row" key={i} style={{ animationDelay: (i * .03) + "s" }}>
+            <span className="flow-branch">{l.branch}</span>
+            <span className="flow-method">{l.method}</span>
+            {l.location && <span className="flow-loc">{l.location}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // --- Gate-Decider ---------------------------------------------------------
 function GatewayPanel() {
   const [q, setQ] = useState("Wie viele Versicherte haben E11.9?");
   const [out, setOut] = useState(null);
+  const [flow, setFlow] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
 
   const go = () => run(async () => {
-    setErr(null); setOut(null);
+    setErr(null); setOut(null); setFlow(null);
     try {
       const res = await fetch("/api/gateway?question=" + encodeURIComponent(q));
       const body = await res.json();
       if (!res.ok) throw new Error("HTTP " + res.status);
       setOut("→ Route: " + body.route + "\n\n" + body.antwort);
+      setFlow(body.flow);
     } catch (e) {
       setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
     }
@@ -64,11 +104,12 @@ function GatewayPanel() {
 
   return (
     <Panel icon="hub" eyebrow="00_gate_decider — route.sh" title="Gate-Decider · KI-Router"
-      hint={<>Ein Eingang für alles: Die KI entscheidet, welches Feature zuständig ist, und delegiert an dessen Endpunkt. Ruft <span className="inline-code">GET /api/gateway</span> auf.</>}>
+      hint={<>Ein Eingang für alles: Die KI entscheidet, welches Feature zuständig ist, und delegiert an dessen Endpunkt. Ruft <span className="inline-code">GET /api/gateway</span> auf – die <b>Call-Flow</b>-Kette unten zeigt den tatsächlich durchlaufenen Methoden-Aufruf-Pfad (wie im Debugger).</>}>
       <label className="field-label">Frage</label>
       <div className="field"><Icon name="forum" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
       <div className="row"><Button icon="alt_route" busy={busy} onClick={go}>route</Button></div>
       <ConsoleOut text={out} />
+      <FlowChain flow={flow} />
       <ConsoleOut text={err} error />
     </Panel>
   );
@@ -483,8 +524,81 @@ function DocsRagPanel() {
   );
 }
 
+// --- Moderation (F19) -----------------------------------------------------
+function ModerationPanel() {
+  const [text, setText] = useState("Erklaere kurz, was Content-Moderation ist.");
+  const [out, setOut] = useState(null);
+  const [verdict, setVerdict] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, run] = useFetch();
+
+  const ask = () => run(async () => {
+    setErr(null); setOut(null); setVerdict(null);
+    try {
+      const res = await fetch("/api/moderation?message=" + encodeURIComponent(text));
+      const body = await res.text();
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + body);
+      setOut(body);
+    } catch (e) {
+      setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
+    }
+  });
+
+  const check = () => run(async () => {
+    setErr(null); setOut(null); setVerdict(null);
+    try {
+      const res = await fetch("/api/moderation/check?text=" + encodeURIComponent(text));
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
+      setVerdict(await res.json());
+    } catch (e) {
+      setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
+    }
+  });
+
+  return (
+    <Panel icon="shield" eyebrow="19_moderation — guardrail.sh" title="Moderation · Guardrail-Advisor"
+      hint={<>Claude prüft sich selbst als Klassifikator: Eingaben werden <i>vor</i> dem Modellaufruf, Antworten <i>danach</i> gefiltert. <span className="inline-code">GET /api/moderation</span> (geschützter Chat) bzw. <span className="inline-code">/api/moderation/check</span> (reines Urteil, analog zu RAG-sources).</>}>
+      <label className="field-label">Text</label>
+      <div className="field"><textarea value={text} onChange={e => setText(e.target.value)} /></div>
+      <div className="row">
+        <Button icon="chat" busy={busy} onClick={ask}>ask</Button>
+        <Button variant="outlined" icon="policy" busy={busy} onClick={check}>check</Button>
+      </div>
+      <ConsoleOut text={out} />
+      {verdict && (
+        <div className="viz" style={{ gridTemplateColumns: "1fr 1fr" }}>
+          <div className="viz-card">
+            <div className="vc-label">Urteil</div>
+            <span className="cat-badge" style={{ background: verdict.flagged ? "#BA1A1A" : "#1E7D45" }}>
+              {verdict.flagged ? "flagged" : "unbedenklich"}
+            </span>
+          </div>
+          <div className="viz-card">
+            <div className="vc-label">Kategorien</div>
+            {verdict.categories && verdict.categories.length
+              ? <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {verdict.categories.map(c => (
+                    <span className="cat-badge" key={c} style={{ background: "#9A6700" }}>{c}</span>
+                  ))}
+                </div>
+              : <span className="hint">–</span>}
+          </div>
+          {verdict.reason && (
+            <div className="viz-card full">
+              <div className="vc-label">Begründung</div>
+              <div className="summary">{verdict.reason}</div>
+            </div>
+          )}
+        </div>
+      )}
+      <ConsoleOut text={err} error />
+    </Panel>
+  );
+}
+
 const PANELS = {
   gateway: GatewayPanel, structured: StructuredPanel, tools: ToolsPanel, rag: RagPanel,
   db: DbPanel, evaluator: EvaluatorPanel, pgvector: PgVectorPanel, docsrag: DocsRagPanel,
+  moderation: ModerationPanel,
 };
 Object.assign(window, { PANELS });
