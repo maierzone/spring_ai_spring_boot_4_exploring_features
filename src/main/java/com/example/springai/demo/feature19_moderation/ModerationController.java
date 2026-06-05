@@ -30,11 +30,14 @@ public class ModerationController {
     private final ContentModerator moderator;
 
     public ModerationController(ChatClient.Builder builder) {
-        // Reihenfolge ist entscheidend: Der Moderator-Client wird OHNE Guardrail gebaut,
-        // damit die Klassifikation selbst den Advisor nicht erneut ausloest (Rekursion).
+        // Der Moderator-Client muss OHNE Guardrail bleiben, sonst wuerde die Klassifikation
+        // den Advisor erneut ausloesen (Endlosrekursion). Die Bau-Reihenfolge allein reicht
+        // dafuer NICHT: Spring AIs Builder.build() reicht dieselbe mutable Request-Spec an den
+        // gebauten Client weiter, ohne sie zu kopieren – ein spaeteres defaultAdvisors(...)
+        // wuerde also auch in den bereits gebauten Moderator-Client durchschlagen. Deshalb
+        // erhaelt der Guardrail-Client eine eigene, unabhaengige Builder-Kopie (clone()).
         this.moderator = new ClaudeContentModerator(builder);
-        // Erst danach erhaelt der eigentliche Chat-Client den Guardrail-Advisor.
-        this.guardedChatClient = builder
+        this.guardedChatClient = builder.clone()
                 .defaultAdvisors(new ModerationGuardrailAdvisor(moderator))
                 .build();
     }
