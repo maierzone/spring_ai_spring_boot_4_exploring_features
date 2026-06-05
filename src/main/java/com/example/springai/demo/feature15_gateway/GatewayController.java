@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.springai.demo.feature10_advisors.ModelPricing;
+
 /**
  * FEATURE 15 – Gate-Decider ("Parent Layer" ueber allen Feature-Controllern).
  *
@@ -82,7 +84,7 @@ public class GatewayController {
             flow = callFlow.stopAndCollect();
         }
         long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
-        RouteMetrics metrics = RouteMetrics.from(usageOf(chatResponse), latencyMs);
+        RouteMetrics metrics = RouteMetrics.from(usageOf(chatResponse), modelOf(chatResponse), latencyMs);
 
         if (recorder.isResolved()) {
             return new GatewayResponse(recorder.route(), recorder.antwort(), flow, metrics);
@@ -98,6 +100,14 @@ public class GatewayController {
         return chatResponse.getMetadata().getUsage();
     }
 
+    /** Modell-Id aus den Antwort-Metadaten lesen (fuer die Kostenabschaetzung). */
+    private static String modelOf(ChatResponse chatResponse) {
+        if (chatResponse == null || chatResponse.getMetadata() == null) {
+            return null;
+        }
+        return chatResponse.getMetadata().getModel();
+    }
+
     /**
      * Transparente Antwort des Gate-Deciders: gewaehlte Route, durchgereichte Antwort,
      * der mitgeschnittene Methoden-Aufruf-Flow ({@link CallNode}-Baum) und die
@@ -109,20 +119,27 @@ public class GatewayController {
     /**
      * Ressourcenverbrauch einer Gateway-Anfrage fuer die Badge-Anzeige: Token-Zahlen
      * (dieselben Werte, die Spring AIs Observability als {@code gen_ai.client.token.usage}
-     * exportiert) und die Wall-Clock-Verarbeitungszeit. Token-Felder sind {@code null},
-     * falls das Modell keine Usage liefert (z.&nbsp;B. ohne API-Key).
+     * exportiert), die Wall-Clock-Verarbeitungszeit und die ueber die Preis-Maptabelle
+     * ({@link ModelPricing}) abgeschaetzten Kosten in USD. Token- und Kostenfeld sind
+     * {@code null}, falls das Modell keine Usage liefert (z.&nbsp;B. ohne API-Key).
      */
-    public record RouteMetrics(Integer inputTokens, Integer outputTokens, Integer totalTokens, long latencyMs) {
+    public record RouteMetrics(Integer inputTokens, Integer outputTokens, Integer totalTokens,
+                               long latencyMs, Double costUsd) {
 
-        static RouteMetrics from(Usage usage, long latencyMs) {
+        static RouteMetrics from(Usage usage, String model, long latencyMs) {
             if (usage == null) {
-                return new RouteMetrics(null, null, null, latencyMs);
+                return new RouteMetrics(null, null, null, latencyMs, null);
             }
+            Integer inputTokens = usage.getPromptTokens();
+            Integer outputTokens = usage.getCompletionTokens();
+            Double costUsd = (inputTokens != null && outputTokens != null)
+                    ? ModelPricing.costUsd(model, inputTokens, outputTokens) : null;
             return new RouteMetrics(
-                    usage.getPromptTokens(),
-                    usage.getCompletionTokens(),
+                    inputTokens,
+                    outputTokens,
                     usage.getTotalTokens(),
-                    latencyMs);
+                    latencyMs,
+                    costUsd);
         }
     }
 }
