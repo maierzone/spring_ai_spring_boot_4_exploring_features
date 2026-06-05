@@ -216,12 +216,38 @@ function ToolsPanel() {
 }
 
 // --- RAG ------------------------------------------------------------------
+function SourceList({ items }) {
+  if (!items) return null;
+  if (items.length === 0) return <ConsoleOut text="Keine Treffer." />;
+  return (
+    <div>
+      {items.map((s, i) => (
+        <div className="src" key={i} style={{ animationDelay: (i * .08) + "s" }}>
+          <div className="src-head">
+            <span className="src-score">score {Number(s.score).toFixed(3)}</span>
+            <span className="src-file">{s.source}</span>
+          </div>
+          <div className="src-text">{s.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RagPanel() {
   const [q, setQ] = useState("Was bedeutet der eGK-Status GESPERRT?");
   const [out, setOut] = useState(null);
   const [sources, setSources] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
+
+  // Laufzeit-Import eigener Dokumente (getrennter Store, /api/rag/import/*).
+  const [imp, setImp] = useState(null);       // stats {dir, files, documents}
+  const [impSrc, setImpSrc] = useState(null); // Treffer aus dem Import-Store
+  const [impOut, setImpOut] = useState(null); // RAG-Antwort über die Importe
+  const [impMsg, setImpMsg] = useState(null); // Status-/Erfolgsmeldung
+  const [impErr, setImpErr] = useState(null);
+  const fileRef = React.useRef(null);
 
   const ask = () => run(async () => {
     setErr(null); setSources(null); setOut(null);
@@ -246,6 +272,63 @@ function RagPanel() {
     }
   });
 
+  const resetImpOut = () => { setImpErr(null); setImpMsg(null); setImpSrc(null); setImpOut(null); };
+
+  const scanFolder = () => run(async () => {
+    resetImpOut();
+    try {
+      const res = await fetch("/api/rag/import/folder", { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.message || ("HTTP " + res.status));
+      setImp(body);
+      setImpMsg(body.documents + " Dokument(e) aus " + body.files.length + " Datei(en) eingelesen.\nOrdner: " + body.dir);
+    } catch (e) { setImpErr(e.message); }
+  });
+
+  const uploadFiles = () => run(async () => {
+    resetImpOut();
+    const input = fileRef.current;
+    if (!input || !input.files.length) { setImpErr("Bitte zuerst Datei(en) wählen."); return; }
+    const fd = new FormData();
+    for (const f of input.files) fd.append("files", f);
+    try {
+      const res = await fetch("/api/rag/import/upload", { method: "POST", body: fd });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.message || ("HTTP " + res.status));
+      setImp(body);
+      setImpMsg(body.added + " neue Dokument(e) hinzugefügt. Import-Speicher gesamt: " + body.documents + ".");
+      input.value = "";
+    } catch (e) { setImpErr(e.message); }
+  });
+
+  const clearImp = () => run(async () => {
+    resetImpOut();
+    try {
+      const res = await fetch("/api/rag/import/clear", { method: "POST" });
+      setImp(await res.json());
+      setImpMsg("Import-Speicher geleert.");
+    } catch (e) { setImpErr(e.message); }
+  });
+
+  const askImp = () => run(async () => {
+    resetImpOut();
+    try {
+      const res = await fetch("/api/rag/import/ask?question=" + encodeURIComponent(q));
+      const body = await res.text();
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + body);
+      setImpOut(body);
+    } catch (e) { setImpErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)"); }
+  });
+
+  const srcImp = () => run(async () => {
+    resetImpOut();
+    try {
+      const res = await fetch("/api/rag/import/sources?question=" + encodeURIComponent(q) + "&topK=3");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      setImpSrc(await res.json());
+    } catch (e) { setImpErr(e.message); }
+  });
+
   return (
     <Panel icon="manage_search" eyebrow="07_rag — telematik-wissen.sh" title="RAG · Telematik-Wissensspeicher"
       hint={<>Antwort auf Basis abgerufener Telematik-/eGK-Fachbegriffe (KVNR, Kartenstatus, Zertifikatstypen, ICD-10). <span className="inline-code">GET /api/rag</span> (Antwort) bzw. <span className="inline-code">/api/rag/sources</span> (nur Quellen, ohne API-Key).</>}>
@@ -256,20 +339,35 @@ function RagPanel() {
         <Button variant="outlined" icon="format_list_bulleted" busy={busy} onClick={showSrc}>sources</Button>
       </div>
       <ConsoleOut text={out} />
-      {sources && (
-        <div>
-          {sources.map((s, i) => (
-            <div className="src" key={i} style={{ animationDelay: (i * .08) + "s" }}>
-              <div className="src-head">
-                <span className="src-score">score {Number(s.score).toFixed(3)}</span>
-                <span className="src-file">{s.source}</span>
-              </div>
-              <div className="src-text">{s.text}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      <SourceList items={sources} />
       <ConsoleOut text={err} error />
+
+      <div className="import-section">
+        <label className="field-label">Eigene Dokumente importieren (getrennter Speicher · nur diese werden durchsucht)</label>
+        <p className="hint">Lege <span className="inline-code">.md/.txt/.pdf</span> in den Server-Ordner und lies sie ein, oder lade Datei(en) direkt hoch. Danach durchsuchen <b>ask · Import</b> / <b>sources · Import</b> ausschliesslich die importierten Dokumente. Endpunkte <span className="inline-code">/api/rag/import/folder · /upload · /sources · /ask</span>.</p>
+        <div className="row">
+          <Button icon="folder_open" busy={busy} onClick={scanFolder}>Ordner einlesen</Button>
+          <Button variant="outlined" icon="delete_sweep" busy={busy} onClick={clearImp}>leeren</Button>
+        </div>
+        <div className="row">
+          <input ref={fileRef} type="file" multiple accept=".md,.txt,.markdown,.pdf" className="file-input" />
+          <Button variant="outlined" icon="upload_file" busy={busy} onClick={uploadFiles}>hochladen</Button>
+        </div>
+        {imp && (
+          <div className="import-stats">
+            <Icon name="inventory_2" /> {imp.documents} Dokument(e) aus {imp.files.length} Quelle(n)
+            {imp.files.length > 0 && <span className="src-file"> · {imp.files.join(", ")}</span>}
+          </div>
+        )}
+        <div className="row">
+          <Button icon="chat" busy={busy} onClick={askImp}>ask · Import</Button>
+          <Button variant="outlined" icon="format_list_bulleted" busy={busy} onClick={srcImp}>sources · Import</Button>
+        </div>
+        {impMsg && <ConsoleOut text={impMsg} />}
+        <ConsoleOut text={impOut} />
+        <SourceList items={impSrc} />
+        <ConsoleOut text={impErr} error />
+      </div>
     </Panel>
   );
 }

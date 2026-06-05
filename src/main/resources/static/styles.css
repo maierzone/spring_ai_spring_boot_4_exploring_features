@@ -334,3 +334,16 @@ body {
 :root[data-theme="b"] .viz, :root[data-theme="b"] .src { margin-top: 15px; }
 :root[data-theme="b"] .viz-card, :root[data-theme="b"] .src { border-radius: 8px; background: #F7F9F8; }
 :root[data-theme="b"] .cat-badge, :root[data-theme="b"] .seg { border-radius: 5px; }
+
+/* ---- RAG: Laufzeit-Import (Feature 7) ---------------------------------- */
+.import-section { margin-top: 24px; padding-top: 20px; border-top: 1px dashed var(--outline); }
+.import-section .hint { margin: 6px 0 4px; }
+.file-input {
+  flex: 1 1 auto; min-width: 0; font-family: var(--mono); font-size: 13px; color: var(--variant);
+  background: var(--surface); border: 1px solid var(--outline); border-radius: 10px; padding: 9px 12px;
+}
+.import-stats {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 14px;
+  font-family: var(--mono); font-size: 12.5px; color: var(--variant);
+}
+.import-stats .material-symbols-rounded { font-size: 18px; color: var(--primary); }

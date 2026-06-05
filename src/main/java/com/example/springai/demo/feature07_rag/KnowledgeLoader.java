@@ -31,6 +31,15 @@ public final class KnowledgeLoader {
      * und versieht jedes Dokument mit dem Quell-Dateinamen als Metadatum.
      */
     public static List<Document> loadParagraphs(Resource resource) {
+        return loadParagraphs(resource, resource.getFilename());
+    }
+
+    /**
+     * Wie {@link #loadParagraphs(Resource)}, erlaubt aber einen explizit
+     * angegebenen Quellnamen. Nuetzlich, wenn die Ressource selbst keinen
+     * Dateinamen kennt (z.&nbsp;B. ein Upload, der nur als Byte-Strom vorliegt).
+     */
+    public static List<Document> loadParagraphs(Resource resource, String source) {
         String content;
         try {
             content = StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
@@ -40,7 +49,6 @@ public final class KnowledgeLoader {
             throw new UncheckedIOException("Wissensquelle nicht lesbar: " + resource.getDescription(), e);
         }
 
-        String source = resource.getFilename();
         // An Leerzeilen splitten, leere Absätze verwerfen, Whitespace trimmen.
         return Arrays.stream(content.split("\\R\\s*\\R"))
                 .map(String::strip)
