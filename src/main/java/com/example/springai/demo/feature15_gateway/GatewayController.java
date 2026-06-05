@@ -1,5 +1,7 @@
 package com.example.springai.demo.feature15_gateway;
 
+import java.util.List;
+
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -47,28 +49,42 @@ public class GatewayController {
     private final ChatClient chatClient;
     private final GatewayTools gatewayTools;
     private final RouteRecorder recorder;
+    private final CallFlowRecorder callFlow;
 
     public GatewayController(ChatClient.Builder builder, GatewayTools gatewayTools,
-                             RouteRecorder recorder) {
+                             RouteRecorder recorder, CallFlowRecorder callFlow) {
         this.chatClient = builder.defaultSystem(SYSTEM_PROMPT).build();
         this.gatewayTools = gatewayTools;
         this.recorder = recorder;
+        this.callFlow = callFlow;
     }
 
     @GetMapping("/api/gateway")
     public GatewayResponse route(
             @RequestParam(defaultValue = "Wie viele Versicherte haben E11.9?") String question) {
-        // Das Modell waehlt und ruft genau ein Gate-Tool; dessen Wahl landet im
-        // request-scoped Recorder. Die freie Schlussantwort des Modells ignorieren wir.
-        chatClient.prompt().user(question).tools(gatewayTools).call().content();
+        // Ab hier den echten Methoden-Aufruf-Flow mitschneiden (siehe CallFlowAspect),
+        // mit dieser Endpunkt-Methode als Wurzel des Aufruf-Baums.
+        callFlow.start("GatewayController.route(String)", "GET /api/gateway");
+        List<CallNode> flow;
+        try {
+            // Das Modell waehlt und ruft genau ein Gate-Tool; dessen Wahl landet im
+            // request-scoped Recorder. Die freie Schlussantwort des Modells ignorieren wir.
+            chatClient.prompt().user(question).tools(gatewayTools).call().content();
+        } finally {
+            // Immer einsammeln (auch bei Fehler) – raeumt zugleich den Thread-Local auf.
+            flow = callFlow.stopAndCollect();
+        }
 
         if (recorder.isResolved()) {
-            return new GatewayResponse(recorder.route(), recorder.antwort());
+            return new GatewayResponse(recorder.route(), recorder.antwort(), flow);
         }
-        return new GatewayResponse("none", "Keine passende Funktion gefunden.");
+        return new GatewayResponse("none", "Keine passende Funktion gefunden.", flow);
     }
 
-    /** Transparente Antwort des Gate-Deciders: gewaehlte Route + durchgereichte Antwort. */
-    public record GatewayResponse(String route, String antwort) {
+    /**
+     * Transparente Antwort des Gate-Deciders: gewaehlte Route, durchgereichte Antwort
+     * und der mitgeschnittene Methoden-Aufruf-Flow ({@link CallNode}-Baum).
+     */
+    public record GatewayResponse(String route, String antwort, List<CallNode> flow) {
     }
 }
