@@ -3,6 +3,8 @@ package com.example.springai.demo.feature15_gateway;
 import java.util.List;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -65,26 +67,62 @@ public class GatewayController {
         // Ab hier den echten Methoden-Aufruf-Flow mitschneiden (siehe CallFlowAspect),
         // mit dieser Endpunkt-Methode als Wurzel des Aufruf-Baums.
         callFlow.start("GatewayController.route(String)", "GET /api/gateway");
+        // Wall-Clock-Messung der gesamten Routing-Verarbeitung (Modellaufruf inkl.
+        // der synchron im Tool ausgefuehrten Feature-Delegation).
+        long startNanos = System.nanoTime();
+        ChatResponse chatResponse = null;
         List<CallNode> flow;
         try {
             // Das Modell waehlt und ruft genau ein Gate-Tool; dessen Wahl landet im
-            // request-scoped Recorder. Die freie Schlussantwort des Modells ignorieren wir.
-            chatClient.prompt().user(question).tools(gatewayTools).call().content();
+            // request-scoped Recorder. Die freie Schlussantwort des Modells ignorieren wir,
+            // lesen aus der ChatResponse aber den Token-Verbrauch dieser Anfrage.
+            chatResponse = chatClient.prompt().user(question).tools(gatewayTools).call().chatResponse();
         } finally {
             // Immer einsammeln (auch bei Fehler) – raeumt zugleich den Thread-Local auf.
             flow = callFlow.stopAndCollect();
         }
+        long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
+        RouteMetrics metrics = RouteMetrics.from(usageOf(chatResponse), latencyMs);
 
         if (recorder.isResolved()) {
-            return new GatewayResponse(recorder.route(), recorder.antwort(), flow);
+            return new GatewayResponse(recorder.route(), recorder.antwort(), flow, metrics);
         }
-        return new GatewayResponse("none", "Keine passende Funktion gefunden.", flow);
+        return new GatewayResponse("none", "Keine passende Funktion gefunden.", flow, metrics);
+    }
+
+    /** Token-Verbrauch aus den Antwort-Metadaten lesen, sofern vorhanden. */
+    private static Usage usageOf(ChatResponse chatResponse) {
+        if (chatResponse == null || chatResponse.getMetadata() == null) {
+            return null;
+        }
+        return chatResponse.getMetadata().getUsage();
     }
 
     /**
-     * Transparente Antwort des Gate-Deciders: gewaehlte Route, durchgereichte Antwort
-     * und der mitgeschnittene Methoden-Aufruf-Flow ({@link CallNode}-Baum).
+     * Transparente Antwort des Gate-Deciders: gewaehlte Route, durchgereichte Antwort,
+     * der mitgeschnittene Methoden-Aufruf-Flow ({@link CallNode}-Baum) und die
+     * aufgewendeten Ressourcen dieser Anfrage ({@link RouteMetrics}).
      */
-    public record GatewayResponse(String route, String antwort, List<CallNode> flow) {
+    public record GatewayResponse(String route, String antwort, List<CallNode> flow, RouteMetrics metrics) {
+    }
+
+    /**
+     * Ressourcenverbrauch einer Gateway-Anfrage fuer die Badge-Anzeige: Token-Zahlen
+     * (dieselben Werte, die Spring AIs Observability als {@code gen_ai.client.token.usage}
+     * exportiert) und die Wall-Clock-Verarbeitungszeit. Token-Felder sind {@code null},
+     * falls das Modell keine Usage liefert (z.&nbsp;B. ohne API-Key).
+     */
+    public record RouteMetrics(Integer inputTokens, Integer outputTokens, Integer totalTokens, long latencyMs) {
+
+        static RouteMetrics from(Usage usage, long latencyMs) {
+            if (usage == null) {
+                return new RouteMetrics(null, null, null, latencyMs);
+            }
+            return new RouteMetrics(
+                    usage.getPromptTokens(),
+                    usage.getCompletionTokens(),
+                    usage.getTotalTokens(),
+                    latencyMs);
+        }
     }
 }

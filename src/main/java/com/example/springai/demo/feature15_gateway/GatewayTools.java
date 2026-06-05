@@ -108,7 +108,7 @@ public class GatewayTools {
 
     @Tool(description = "Beantwortet eine Frage mit aktivierten Chat-Advisors (Logging/Metriken).")
     public String mitAdvisors(@ToolParam(description = "Die Frage") String nachricht) {
-        return route("advisors", advisors.ask(nachricht));
+        return route("advisors", advisors.ask(nachricht).answer());
     }
 
     @Tool(description = "Beantwortet eine Frage unter Nutzung entfernter MCP-Server-Tools.")

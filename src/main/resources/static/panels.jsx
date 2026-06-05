@@ -81,22 +81,51 @@ function FlowChain({ flow }) {
   );
 }
 
+// Badge: Ressourcenverbrauch einer Anfrage (Token + Verarbeitungszeit) auf einen Blick.
+function MetricsBadge({ m }) {
+  if (!m) return null;
+  const hasTokens = m.totalTokens != null;
+  return (
+    <div className="metrics-badge" title="Spring AI Observability · gen_ai.client.token.usage + Verarbeitungszeit">
+      <div className="mb-item">
+        <Icon name="schedule" />
+        <span className="mb-val">{m.latencyMs}<span className="mb-unit">ms</span></span>
+        <span className="mb-label">Verarbeitung</span>
+      </div>
+      <div className="mb-sep"></div>
+      <div className="mb-item">
+        <Icon name="toll" />
+        <span className="mb-val">{hasTokens ? m.totalTokens : "—"}</span>
+        <span className="mb-label">Tokens gesamt</span>
+      </div>
+      {hasTokens && (
+        <div className="mb-split">
+          <span className="mb-chip in"><Icon name="login" />{m.inputTokens} in</span>
+          <span className="mb-chip out"><Icon name="logout" />{m.outputTokens} out</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Gate-Decider ---------------------------------------------------------
 function GatewayPanel() {
   const [q, setQ] = useState("Wie viele Versicherte haben E11.9?");
   const [out, setOut] = useState(null);
   const [flow, setFlow] = useState(null);
+  const [metrics, setMetrics] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
 
   const go = () => run(async () => {
-    setErr(null); setOut(null); setFlow(null);
+    setErr(null); setOut(null); setFlow(null); setMetrics(null);
     try {
       const res = await fetch("/api/gateway?question=" + encodeURIComponent(q));
       const body = await res.json();
       if (!res.ok) throw new Error("HTTP " + res.status);
       setOut("→ Route: " + body.route + "\n\n" + body.antwort);
       setFlow(body.flow);
+      setMetrics(body.metrics);
     } catch (e) {
       setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
     }
@@ -104,10 +133,11 @@ function GatewayPanel() {
 
   return (
     <Panel icon="hub" eyebrow="00_gate_decider — route.sh" title="Gate-Decider · KI-Router"
-      hint={<>Ein Eingang für alles: Die KI entscheidet, welches Feature zuständig ist, und delegiert an dessen Endpunkt. Ruft <span className="inline-code">GET /api/gateway</span> auf – die <b>Call-Flow</b>-Kette unten zeigt den tatsächlich durchlaufenen Methoden-Aufruf-Pfad (wie im Debugger).</>}>
+      hint={<>Ein Eingang für alles: Die KI entscheidet, welches Feature zuständig ist, und delegiert an dessen Endpunkt. Ruft <span className="inline-code">GET /api/gateway</span> auf – die <b>Call-Flow</b>-Kette unten zeigt den tatsächlich durchlaufenen Methoden-Aufruf-Pfad (wie im Debugger), das <b>Badge</b> den Token-Verbrauch &amp; die Verarbeitungszeit dieser Anfrage.</>}>
       <label className="field-label">Frage</label>
       <div className="field"><Icon name="forum" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
       <div className="row"><Button icon="alt_route" busy={busy} onClick={go}>route</Button></div>
+      <MetricsBadge m={metrics} />
       <ConsoleOut text={out} />
       <FlowChain flow={flow} />
       <ConsoleOut text={err} error />
@@ -216,12 +246,38 @@ function ToolsPanel() {
 }
 
 // --- RAG ------------------------------------------------------------------
+function SourceList({ items }) {
+  if (!items) return null;
+  if (items.length === 0) return <ConsoleOut text="Keine Treffer." />;
+  return (
+    <div>
+      {items.map((s, i) => (
+        <div className="src" key={i} style={{ animationDelay: (i * .08) + "s" }}>
+          <div className="src-head">
+            <span className="src-score">score {Number(s.score).toFixed(3)}</span>
+            <span className="src-file">{s.source}</span>
+          </div>
+          <div className="src-text">{s.text}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function RagPanel() {
   const [q, setQ] = useState("Was bedeutet der eGK-Status GESPERRT?");
   const [out, setOut] = useState(null);
   const [sources, setSources] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
+
+  // Laufzeit-Import eigener Dokumente (getrennter Store, /api/rag/import/*).
+  const [imp, setImp] = useState(null);       // stats {dir, files, documents}
+  const [impSrc, setImpSrc] = useState(null); // Treffer aus dem Import-Store
+  const [impOut, setImpOut] = useState(null); // RAG-Antwort über die Importe
+  const [impMsg, setImpMsg] = useState(null); // Status-/Erfolgsmeldung
+  const [impErr, setImpErr] = useState(null);
+  const fileRef = React.useRef(null);
 
   const ask = () => run(async () => {
     setErr(null); setSources(null); setOut(null);
@@ -246,6 +302,63 @@ function RagPanel() {
     }
   });
 
+  const resetImpOut = () => { setImpErr(null); setImpMsg(null); setImpSrc(null); setImpOut(null); };
+
+  const scanFolder = () => run(async () => {
+    resetImpOut();
+    try {
+      const res = await fetch("/api/rag/import/folder", { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.message || ("HTTP " + res.status));
+      setImp(body);
+      setImpMsg(body.documents + " Dokument(e) aus " + body.files.length + " Datei(en) eingelesen.\nOrdner: " + body.dir);
+    } catch (e) { setImpErr(e.message); }
+  });
+
+  const uploadFiles = () => run(async () => {
+    resetImpOut();
+    const input = fileRef.current;
+    if (!input || !input.files.length) { setImpErr("Bitte zuerst Datei(en) wählen."); return; }
+    const fd = new FormData();
+    for (const f of input.files) fd.append("files", f);
+    try {
+      const res = await fetch("/api/rag/import/upload", { method: "POST", body: fd });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.message || ("HTTP " + res.status));
+      setImp(body);
+      setImpMsg(body.added + " neue Dokument(e) hinzugefügt. Import-Speicher gesamt: " + body.documents + ".");
+      input.value = "";
+    } catch (e) { setImpErr(e.message); }
+  });
+
+  const clearImp = () => run(async () => {
+    resetImpOut();
+    try {
+      const res = await fetch("/api/rag/import/clear", { method: "POST" });
+      setImp(await res.json());
+      setImpMsg("Import-Speicher geleert.");
+    } catch (e) { setImpErr(e.message); }
+  });
+
+  const askImp = () => run(async () => {
+    resetImpOut();
+    try {
+      const res = await fetch("/api/rag/import/ask?question=" + encodeURIComponent(q));
+      const body = await res.text();
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + body);
+      setImpOut(body);
+    } catch (e) { setImpErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)"); }
+  });
+
+  const srcImp = () => run(async () => {
+    resetImpOut();
+    try {
+      const res = await fetch("/api/rag/import/sources?question=" + encodeURIComponent(q) + "&topK=8");
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      setImpSrc(await res.json());
+    } catch (e) { setImpErr(e.message); }
+  });
+
   return (
     <Panel icon="manage_search" eyebrow="07_rag — telematik-wissen.sh" title="RAG · Telematik-Wissensspeicher"
       hint={<>Antwort auf Basis abgerufener Telematik-/eGK-Fachbegriffe (KVNR, Kartenstatus, Zertifikatstypen, ICD-10). <span className="inline-code">GET /api/rag</span> (Antwort) bzw. <span className="inline-code">/api/rag/sources</span> (nur Quellen, ohne API-Key).</>}>
@@ -256,20 +369,36 @@ function RagPanel() {
         <Button variant="outlined" icon="format_list_bulleted" busy={busy} onClick={showSrc}>sources</Button>
       </div>
       <ConsoleOut text={out} />
-      {sources && (
-        <div>
-          {sources.map((s, i) => (
-            <div className="src" key={i} style={{ animationDelay: (i * .08) + "s" }}>
-              <div className="src-head">
-                <span className="src-score">score {Number(s.score).toFixed(3)}</span>
-                <span className="src-file">{s.source}</span>
-              </div>
-              <div className="src-text">{s.text}</div>
-            </div>
-          ))}
-        </div>
-      )}
+      <SourceList items={sources} />
       <ConsoleOut text={err} error />
+
+      <div className="import-section">
+        <label className="field-label">Eigene Dokumente importieren (getrennter Speicher · nur diese werden durchsucht)</label>
+        <p className="hint">Lege <span className="inline-code">.md/.txt/.pdf</span> in den Server-Ordner und lies sie ein, oder lade Datei(en) direkt hoch. Danach durchsuchen <b>ask · Import</b> / <b>sources · Import</b> ausschliesslich die importierten Dokumente. Endpunkte <span className="inline-code">/api/rag/import/folder · /upload · /sources · /ask</span>. Für brauchbare Treffer in echten PDFs: <span className="inline-code">demo.rag.import-embedding=onnx</span> (lokales semantisches Embedding) – sonst arbeitet die Suche nicht-semantisch.</p>
+        <div className="row">
+          <Button icon="folder_open" busy={busy} onClick={scanFolder}>Ordner einlesen</Button>
+          <Button variant="outlined" icon="delete_sweep" busy={busy} onClick={clearImp}>leeren</Button>
+        </div>
+        <div className="row">
+          <input ref={fileRef} type="file" multiple accept=".md,.txt,.markdown,.pdf" className="file-input" />
+          <Button variant="outlined" icon="upload_file" busy={busy} onClick={uploadFiles}>hochladen</Button>
+        </div>
+        {imp && (
+          <div className="import-stats">
+            <Icon name="inventory_2" /> {imp.documents} Dokument(e) aus {imp.files.length} Quelle(n)
+            {imp.embedding && <span className="emb-chip"><Icon name="network_intelligence" />{imp.embedding}</span>}
+            {imp.files.length > 0 && <span className="src-file"> · {imp.files.join(", ")}</span>}
+          </div>
+        )}
+        <div className="row">
+          <Button icon="chat" busy={busy} onClick={askImp}>ask · Import</Button>
+          <Button variant="outlined" icon="format_list_bulleted" busy={busy} onClick={srcImp}>sources · Import</Button>
+        </div>
+        {impMsg && <ConsoleOut text={impMsg} />}
+        <ConsoleOut text={impOut} />
+        <SourceList items={impSrc} />
+        <ConsoleOut text={impErr} error />
+      </div>
     </Panel>
   );
 }
@@ -596,8 +725,65 @@ function ModerationPanel() {
   );
 }
 
+// --- Advisors (Metriken & Kosten) -----------------------------------------
+function AdvisorsPanel() {
+  const [q, setQ] = useState("Erklaere kurz, was ein Advisor ist.");
+  const [out, setOut] = useState(null);
+  const [metrics, setMetrics] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, run] = useFetch();
+
+  const go = () => run(async () => {
+    setErr(null); setOut(null); setMetrics(null);
+    try {
+      const res = await fetch("/api/advisors?message=" + encodeURIComponent(q));
+      const body = await res.json();
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      setOut(body.answer);
+      setMetrics(body.metrics);
+    } catch (e) {
+      setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
+    }
+  });
+
+  const val = (v, suffix) => (v === null || v === undefined) ? "n/a" : v + (suffix || "");
+  const cost = (v) => (v === null || v === undefined) ? "n/a" : "$" + v.toFixed(6);
+
+  return (
+    <Panel icon="tune" eyebrow="10_advisors — metrics.sh" title="Advisors · Metriken & Kosten"
+      hint={<>Der selbst geschriebene <span className="inline-code">MetricsLoggingAdvisor</span> misst Latenz und Token-Verbrauch und rechnet über eine Preis-Maptabelle (<span className="inline-code">ModelPricing</span>) die Kosten je Aufruf aus. <span className="inline-code">GET /api/advisors</span> liefert Antwort plus Metrik-Badge.</>}>
+      <label className="field-label">Nachricht</label>
+      <div className="field"><Icon name="forum" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
+      <div className="row"><Button icon="chat" busy={busy} onClick={go}>ask</Button></div>
+      <ConsoleOut text={out} />
+      {metrics && (
+        <div className="viz" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+          <div className="viz-card">
+            <div className="vc-label">Tokens (in / out)</div>
+            <div className="summary">{val(metrics.inputTokens)} / {val(metrics.outputTokens)}</div>
+          </div>
+          <div className="viz-card">
+            <div className="vc-label">Verarbeitungszeit</div>
+            <div className="summary">{val(metrics.latencyMs, " ms")}</div>
+          </div>
+          <div className="viz-card">
+            <div className="vc-label">Kosten (USD)</div>
+            <div className="summary">{cost(metrics.costUsd)}</div>
+          </div>
+          <div className="viz-card full">
+            <div className="vc-label">Modell · Tokens gesamt</div>
+            <div className="summary">{val(metrics.model)} · {val(metrics.totalTokens)}</div>
+          </div>
+        </div>
+      )}
+      <ConsoleOut text={err} error />
+    </Panel>
+  );
+}
+
 const PANELS = {
   gateway: GatewayPanel, structured: StructuredPanel, tools: ToolsPanel, rag: RagPanel,
+  advisors: AdvisorsPanel,
   db: DbPanel, evaluator: EvaluatorPanel, pgvector: PgVectorPanel, docsrag: DocsRagPanel,
   moderation: ModerationPanel,
 };

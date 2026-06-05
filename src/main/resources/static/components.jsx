@@ -58,6 +58,7 @@ const FEATURES = [
   { id: "structured", icon: "account_tree",   name: "Structured Output", endpoint: "/api/tickets/analyze" },
   { id: "tools",      icon: "construction",   name: "Tool Calling",      endpoint: "/api/tools" },
   { id: "rag",        icon: "manage_search",  name: "RAG",               endpoint: "/api/rag" },
+  { id: "advisors",   icon: "tune",           name: "Advisors",          endpoint: "/api/advisors" },
   { id: "db",         icon: "database",       name: "DB-Abfrage",        endpoint: "/api/db/ask" },
   { id: "evaluator",  icon: "autorenew",      name: "Evaluator-Optimizer", endpoint: "/api/evaluator/sql" },
   { id: "pgvector",   icon: "database",       name: "pgvector",          endpoint: "/api/pgvector" },
