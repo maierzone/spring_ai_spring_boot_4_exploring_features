@@ -59,6 +59,17 @@
             <artifactId>spring-ai-advisors-vector-store</artifactId>
         </dependency>
 
+        <!-- Modulare RAG-Pipeline (Feature 20): RetrievalAugmentationAdvisor mit
+             Query-Transformern (Rewrite), Query-Expansion (MultiQuery),
+             VectorStoreDocumentRetriever und ContextualQueryAugmenter. Anders als
+             der einfache QuestionAnswerAdvisor (Feature 7) ist hier jeder Schritt
+             der Pipeline eine austauschbare Komponente. Nicht transitiv im
+             advisors-vector-store enthalten, daher explizit (Version via BOM). -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-rag</artifactId>
+        </dependency>
+
         <!-- PDF-Reader (PagePdfDocumentReader, PDFBox) fuer die Spec-Ingestion:
              zerlegt gematik-Spec-PDFs in Seiten-Dokumente, die der TokenTextSplitter
              anschliessend in Chunks schneidet. Nur fuer das Profil 'specs' relevant. -->

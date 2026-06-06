@@ -81,12 +81,13 @@ function FlowChain({ flow }) {
   );
 }
 
-// Badge: Ressourcenverbrauch einer Anfrage (Token + Verarbeitungszeit) auf einen Blick.
+// Badge: Ressourcenverbrauch einer Anfrage (Token + Verarbeitungszeit + Kosten) auf einen Blick.
 function MetricsBadge({ m }) {
   if (!m) return null;
   const hasTokens = m.totalTokens != null;
+  const hasCost = m.costUsd != null;
   return (
-    <div className="metrics-badge" title="Spring AI Observability · gen_ai.client.token.usage + Verarbeitungszeit">
+    <div className="metrics-badge" title="Spring AI Observability · gen_ai.client.token.usage + Verarbeitungszeit + Kosten (ModelPricing)">
       <div className="mb-item">
         <Icon name="schedule" />
         <span className="mb-val">{m.latencyMs}<span className="mb-unit">ms</span></span>
@@ -97,6 +98,12 @@ function MetricsBadge({ m }) {
         <Icon name="toll" />
         <span className="mb-val">{hasTokens ? m.totalTokens : "—"}</span>
         <span className="mb-label">Tokens gesamt</span>
+      </div>
+      <div className="mb-sep"></div>
+      <div className="mb-item">
+        <Icon name="payments" />
+        <span className="mb-val">{hasCost ? "$" + m.costUsd.toFixed(6) : "—"}</span>
+        <span className="mb-label">Kosten</span>
       </div>
       {hasTokens && (
         <div className="mb-split">

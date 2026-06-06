@@ -56,7 +56,7 @@ public final class ModelPricing {
     }
 
     /** Kosten eines Aufrufs in USD für die gegebene Token-Nutzung. */
-    static double costUsd(String model, long inputTokens, long outputTokens) {
+    public static double costUsd(String model, long inputTokens, long outputTokens) {
         Price price = priceFor(model);
         return inputTokens / 1_000_000.0 * price.inputPerMillion()
                 + outputTokens / 1_000_000.0 * price.outputPerMillion();

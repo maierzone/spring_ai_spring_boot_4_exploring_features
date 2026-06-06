@@ -36,6 +36,7 @@ REST-Endpunkt umgesetzt. Als LLM-Provider ist **Anthropic (Claude)** konfigurier
 | 13 | **Evaluation** – LLM-as-a-Judge gegen Halluzinationen | `GET /api/evaluate/relevancy?question=…&context=…&answer=…` | `feature13_evaluation` |
 | 17 | **pgvector** – persistenter VectorStore (PostgreSQL) | `GET /api/pgvector/search?query=…&category=…` · `POST /api/pgvector/documents?text=…&category=…` · `GET /api/pgvector/info` | `feature17_pgvector` |
 | 19 | **Moderation** – Content-Safety als Guardrail-Advisor (Claude-as-Classifier) | `GET /api/moderation?message=…` · `GET /api/moderation/check?text=…` | `feature19_moderation` |
+| 20 | **Modulare / Advanced RAG** – `RetrievalAugmentationAdvisor` mit Query-Transformation, -Expansion, Retriever & Augmenter als austauschbare Pipeline | `GET /api/modular-rag?question=…` · `GET /api/modular-rag/retrieve?question=…` (Retriever-Transparenz, ohne API-Key) | `feature20_modularrag` |
 
 Ausführliche Erläuterung dieser drei Themenblöcke (Konzept, Code, Konfiguration,
 Fallstricke) im Handbuch: **[`docs/HANDBUCH.md`](docs/HANDBUCH.md)**.
@@ -47,6 +48,18 @@ Fallstricke) im Handbuch: **[`docs/HANDBUCH.md`](docs/HANDBUCH.md)**.
 > selbst geschriebenen `CallAdvisor` um, der Eingabe **und** Antwort prüft (Input-/
 > Output-Guardrail) – ohne zweiten Provider und mit demselben Anthropic-API-Key.
 > Getestet wird gegen die `ContentModerator`-Abstraktion, das Quality-Gate bleibt offline.
+
+> **Hinweis zu Feature 20 (Modulare RAG):** Während Feature 7 die einfachste
+> RAG-Form (`QuestionAnswerAdvisor`: Frage → Suche → Antwort) zeigt, zerlegt der
+> `RetrievalAugmentationAdvisor` denselben Ablauf in eine **austauschbare Pipeline**
+> aus eigenständigen Komponenten: Query-Transformation (`RewriteQueryTransformer`
+> schärft die Suchanfrage), Query-Expansion (`MultiQueryExpander` erzeugt
+> Formulierungsvarianten), Retrieval (`VectorStoreDocumentRetriever`) und
+> Augmentation (`ContextualQueryAugmenter` mit `allowEmptyContext`). Genutzt wird
+> derselbe Vektorspeicher wie in Feature 7. Trade-off: Transformation und Expansion
+> sind je ein zusätzlicher kleiner LLM-Aufruf vor der eigentlichen Antwort. Der
+> deterministische Retrieval-Schritt wird über `/api/modular-rag/retrieve` ohne
+> API-Key sichtbar gemacht und ist offline getestet.
 
 ### Agentic Patterns (siehe Handbuch `docs/HANDBUCH-EVALUATOR-OPTIMIZER.md`)
 
