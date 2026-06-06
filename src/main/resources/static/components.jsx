@@ -38,8 +38,20 @@ function TopAppBar() {
     <header className="appbar">
       <div className="win-dots"><span className="wd r"></span><span className="wd y"></span><span className="wd g"></span></div>
       <div className="brand">
-        <div className="badge"><Icon name="terminal" /></div>
-        <div className="word">Spring AI <span className="accent">Console</span></div>
+        <div className="badge" aria-hidden="true">
+          {/* Eigenständiges Backend-Emblem: gestapelte Service-/Daten-Layer mit Status-LEDs. */}
+          <svg viewBox="0 0 24 24" role="img" aria-label="Backend Working Group">
+            <rect x="3" y="3.5" width="18" height="5"   rx="1.6" fill="rgba(255,255,255,.96)" />
+            <rect x="3" y="10"  width="18" height="5"   rx="1.6" fill="rgba(255,255,255,.78)" />
+            <rect x="3" y="16.5" width="13" height="4.2" rx="1.6" fill="rgba(255,255,255,.56)" />
+            <circle cx="6.6" cy="6"    r="1" fill="#4fd6b6" />
+            <circle cx="6.6" cy="12.5" r="1" fill="#4fd6b6" />
+          </svg>
+        </div>
+        <div className="word">
+          <span className="brand-eyebrow">WorkingGroup <span className="be-tag">-Backend-</span></span>
+          <span className="brand-title">Spring-AI <span className="accent">Exploration</span></span>
+        </div>
       </div>
       <div className="spacer"></div>
       <ThemeSwitch />
