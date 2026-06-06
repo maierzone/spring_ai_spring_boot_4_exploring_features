@@ -24,8 +24,8 @@ function Panel({ icon, eyebrow, title, hint, children }) {
 function useFetch() {
   const [busy, setBusy] = useState(false);
   const run = async (fn) => {
-    setBusy(true);
-    try { await fn(); } finally { setBusy(false); }
+    setBusy(true); LoaderBus.inc();
+    try { await fn(); } finally { setBusy(false); LoaderBus.dec(); }
   };
   return [busy, run];
 }

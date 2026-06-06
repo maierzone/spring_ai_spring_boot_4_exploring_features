@@ -87,4 +87,38 @@ function NavDrawer({ active, onSelect }) {
   );
 }
 
-Object.assign(window, { Icon, Button, TopAppBar, NavDrawer, FEATURES });
+// --- Globaler LLM-Loader (Spring Orbit) -----------------------------------
+// Ein winziger Bus zählt parallele Requests. useFetch() ruft inc()/dec() auf,
+// sodass JEDER vorhandene und künftige run(...)-Aufruf den Loader auslöst,
+// ohne dass ein einzelnes Panel angefasst werden muss.
+const LoaderBus = {
+  _count: 0,
+  _subs: new Set(),
+  inc() { this._count++; this._emit(); },
+  dec() { this._count = Math.max(0, this._count - 1); this._emit(); },
+  subscribe(fn) { this._subs.add(fn); return () => this._subs.delete(fn); },
+  _emit() { const active = this._count > 0; this._subs.forEach(fn => fn(active)); },
+};
+
+// Einmal im App-Root gemountet. Legt ein fixes Overlay über den ganzen Screen:
+// backdrop-filter verschwimmt alles dahinter, der Orbit-Spinner bleibt scharf
+// im Fokus. Rein wie raus rein über CSS-Transitions (siehe styles.css).
+function GlobalLoader() {
+  const [active, setActive] = React.useState(false);
+  React.useEffect(() => LoaderBus.subscribe(setActive), []);
+  return (
+    <div className={"global-loader" + (active ? " active" : "")} aria-hidden={!active}>
+      <div className="gl-card" role="status" aria-label="LLM denkt nach">
+        <div className="gl-rings">
+          <span className="gl-ring r1"></span>
+          <span className="gl-ring r2"></span>
+          <span className="gl-ring r3"></span>
+          <span className="gl-orbit"><i className="gl-electron"></i></span>
+          <Icon name="eco" className="gl-core" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { Icon, Button, TopAppBar, NavDrawer, FEATURES, LoaderBus, GlobalLoader });

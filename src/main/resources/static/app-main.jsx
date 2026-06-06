@@ -6,6 +6,7 @@ function App() {
   const PanelComp = PANELS[active];
   return (
     <React.Fragment>
+      <GlobalLoader />
       <TopAppBar />
       <div className="shell">
         <NavDrawer active={active} onSelect={setActive} />
