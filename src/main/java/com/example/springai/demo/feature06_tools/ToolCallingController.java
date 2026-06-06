@@ -1,6 +1,10 @@
 package com.example.springai.demo.feature06_tools;
 
+import com.example.springai.demo.feature10_advisors.ModelPricing;
+
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,13 +45,50 @@ public class ToolCallingController {
     }
 
     @GetMapping("/api/tools")
-    public String ask(@RequestParam(defaultValue = "Ist die KVNR A123456780 gueltig?") String message) {
-        return chatClient.prompt()
+    public ToolResponse ask(@RequestParam(defaultValue = "Ist die KVNR A123456780 gueltig?") String message) {
+        // Wall-Clock-Messung der gesamten Verarbeitung (inkl. synchron ausgefuehrter Tools).
+        long startNanos = System.nanoTime();
+        ChatResponse response = chatClient.prompt()
                 .user(message)
                 // Beide Werkzeug-Sammlungen fuer diese Anfrage anbieten. Das Modell
                 // waehlt selbst aus, welches Tool (falls ueberhaupt) es aufruft.
                 .tools(egkCheckTools, stammdatenTool, new DateTimeTools())
                 .call()
-                .content();
+                .chatResponse();
+        long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
+        String antwort = response.getResult().getOutput().getText();
+        return new ToolResponse(antwort, ToolMetrics.from(usageOf(response), modelOf(response), latencyMs));
+    }
+
+    private static Usage usageOf(ChatResponse response) {
+        if (response == null || response.getMetadata() == null) {
+            return null;
+        }
+        return response.getMetadata().getUsage();
+    }
+
+    private static String modelOf(ChatResponse response) {
+        if (response == null || response.getMetadata() == null) {
+            return null;
+        }
+        return response.getMetadata().getModel();
+    }
+
+    public record ToolResponse(String antwort, ToolMetrics metrics) {
+    }
+
+    public record ToolMetrics(Integer inputTokens, Integer outputTokens, Integer totalTokens,
+                              long latencyMs, Double costUsd) {
+
+        static ToolMetrics from(Usage usage, String model, long latencyMs) {
+            if (usage == null) {
+                return new ToolMetrics(null, null, null, latencyMs, null);
+            }
+            Integer inputTokens = usage.getPromptTokens();
+            Integer outputTokens = usage.getCompletionTokens();
+            Double costUsd = (inputTokens != null && outputTokens != null)
+                    ? ModelPricing.costUsd(model, inputTokens, outputTokens) : null;
+            return new ToolMetrics(inputTokens, outputTokens, usage.getTotalTokens(), latencyMs, costUsd);
+        }
     }
 }

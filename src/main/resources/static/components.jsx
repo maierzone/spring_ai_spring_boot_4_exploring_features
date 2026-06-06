@@ -44,12 +44,15 @@ const VERSION_CHIPS = [
 function TopAppBar() {
   // Versionen einmalig vom Actuator-Info-Endpoint laden (kein LoaderBus: still).
   const [versions, setVersions] = React.useState(null);
+  // Aufaddierte, geschätzte API-Kosten dieser Session (siehe CostBus).
+  const [cost, setCost] = React.useState(0);
   React.useEffect(() => {
     fetch("/actuator/info")
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then(info => setVersions(info.versions || {}))
       .catch(() => setVersions({}));
   }, []);
+  React.useEffect(() => CostBus.subscribe(setCost), []);
   return (
     <header className="appbar">
       <div className="win-dots"><span className="wd r"></span><span className="wd y"></span><span className="wd g"></span></div>
@@ -78,7 +81,13 @@ function TopAppBar() {
             <span key={c.key} className="stat-chip">{c.label} {versions[c.key]}</span>
           ))}
       </div>
-      <div className="key-pill"><span className="dot"></span>Claude · API-Key aktiv</div>
+      <div className="key-pill" tabIndex={0}>
+        <span className="dot"></span>Claude · API-Key aktiv
+        <div className="kp-tip" role="tooltip">
+          <div className="kp-tip-row"><span>Diese Session</span><b>${cost.toFixed(6)}</b></div>
+          <div className="kp-tip-sub">aufaddierte API-Kosten (geschätzt via ModelPricing).<br/>Echtes Restguthaben liefert die Anthropic-API nicht.</div>
+        </div>
+      </div>
     </header>
   );
 }
@@ -163,6 +172,18 @@ const LoaderBus = {
   _emit() { const active = this._count > 0; this._subs.forEach(fn => fn(active)); },
 };
 
+// Summiert die geschätzten API-Kosten (metrics.costUsd) über die ganze Session.
+// Echtes Restguthaben ist per Anthropic-/Spring-AI-API nicht abrufbar – daher
+// zeigen wir die aufaddierten Ausgaben dieser Session. Die Panels mit Metriken
+// (Gateway, Evaluator, Tools) rufen add(...) nach jeder Antwort auf.
+const CostBus = {
+  _total: 0,
+  _subs: new Set(),
+  add(usd) { if (typeof usd === "number" && usd > 0) { this._total += usd; this._emit(); } },
+  subscribe(fn) { this._subs.add(fn); fn(this._total); return () => this._subs.delete(fn); },
+  _emit() { this._subs.forEach(fn => fn(this._total)); },
+};
+
 // Einmal im App-Root gemountet. Legt ein fixes Overlay über den ganzen Screen:
 // backdrop-filter verschwimmt alles dahinter, der Orbit-Spinner bleibt scharf
 // im Fokus. Rein wie raus rein über CSS-Transitions (siehe styles.css).
@@ -184,4 +205,4 @@ function GlobalLoader() {
   );
 }
 
-Object.assign(window, { Icon, Button, TopAppBar, NavDrawer, FEATURES, NAV_GROUPS, LoaderBus, GlobalLoader });
+Object.assign(window, { Icon, Button, TopAppBar, NavDrawer, FEATURES, NAV_GROUPS, LoaderBus, CostBus, GlobalLoader });

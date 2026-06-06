@@ -123,10 +123,28 @@ body {
   background: var(--bg); border-radius: 999px; padding: 8px 14px; white-space: nowrap;
 }
 .key-pill {
+  position: relative;
   display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px;
   color: var(--on-success); background: var(--success-c); border-radius: 999px; padding: 8px 16px;
+  cursor: default;
 }
 .key-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 4px rgba(30,125,69,.18); }
+
+/* Hover-Tooltip: aufaddierte Session-Kosten. */
+.key-pill .kp-tip {
+  position: absolute; top: calc(100% + 10px); right: 0; z-index: 80;
+  width: max-content; max-width: 280px;
+  background: var(--surface); color: var(--on-surface);
+  border: 1px solid var(--outline-soft); border-radius: 14px; padding: 12px 16px;
+  box-shadow: 0 18px 44px -12px rgba(0,0,0,.4);
+  opacity: 0; transform: translateY(-4px); pointer-events: none;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.key-pill:hover .kp-tip, .key-pill:focus .kp-tip { opacity: 1; transform: translateY(0); }
+.kp-tip-row { display: flex; align-items: baseline; justify-content: space-between; gap: 18px; }
+.kp-tip-row span { font: 600 12px/1 var(--font); color: var(--variant); text-transform: uppercase; letter-spacing: .04em; }
+.kp-tip-row b { font: 800 18px/1 var(--mono); color: var(--primary-h); }
+.kp-tip-sub { margin-top: 8px; font: 500 11px/1.5 var(--font); color: var(--muted); }
 
 /* ============================================================================
    NAV DRAWER
@@ -231,6 +249,11 @@ body {
 .btn.filled { background: linear-gradient(135deg, var(--primary), var(--accent2)); color: #fff; box-shadow: 0 8px 20px -6px rgba(58,87,200,.5); }
 .btn.filled:hover { box-shadow: 0 10px 24px -6px rgba(58,87,200,.6); }
 .btn.filled:active { transform: scale(.98); }
+/* Wie .filled, nur dunkler: dunkles Overlay ueber demselben Gradienten – Hue und
+   Stil bleiben gleich, der weisse Text ungetruebt. */
+.btn.filled-dark { background-image: linear-gradient(rgba(0,0,0,.26), rgba(0,0,0,.26)), linear-gradient(135deg, var(--primary), var(--accent2)); color: #fff; box-shadow: 0 8px 20px -6px rgba(58,87,200,.5); }
+.btn.filled-dark:hover { box-shadow: 0 10px 24px -6px rgba(58,87,200,.6); }
+.btn.filled-dark:active { transform: scale(.98); }
 .btn.tonal { background: var(--primary-container); color: var(--on-primary-container); }
 .btn.outlined { background: transparent; color: var(--primary); border: 1px solid var(--outline); }
 .btn.outlined:hover { background: var(--primary-container); }
@@ -313,6 +336,38 @@ body {
 .md table { border-collapse: collapse; margin: 0 0 10px; font-size: 13px; }
 .md th, .md td { border: 1px solid var(--outline); padding: 5px 10px; text-align: left; }
 .md blockquote { margin: 0 0 10px; padding-left: 12px; border-left: 3px solid var(--outline); color: var(--variant); }
+
+/* "Query auf DB ausführen" taucht pixel-artig aus dem Nichts auf: eine animierte
+   Masken-@property laesst pro 5px-Kachel einen Punkt von 0 auf volle Deckung
+   wachsen; steps() macht den Aufbau kachelweise (Pixel-Render-Look) ueber 2s. */
+@property --pixel-reveal {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+.exec-reveal {
+  display: inline-flex;
+  -webkit-mask-image: radial-gradient(circle at center, #000 var(--pixel-reveal), transparent var(--pixel-reveal));
+          mask-image: radial-gradient(circle at center, #000 var(--pixel-reveal), transparent var(--pixel-reveal));
+  -webkit-mask-size: 5px 5px;
+          mask-size: 5px 5px;
+  -webkit-mask-repeat: repeat;
+          mask-repeat: repeat;
+  animation: pixel-materialize 2s steps(14, end) both;
+}
+@keyframes pixel-materialize {
+  from { --pixel-reveal: 0%;   opacity: 0; }
+  99%  { --pixel-reveal: 100%; opacity: 1; }
+  /* Letzter Step: Maske abwerfen, damit der box-shadow des Buttons nicht
+     dauerhaft beschnitten bleibt. */
+  to   { --pixel-reveal: 100%; opacity: 1; -webkit-mask-image: none; mask-image: none; }
+}
+
+/* Ergebnis-Tabelle des SQL-Execute-Endpoints (Evaluator-Optimizer). */
+.sql-result-wrap { overflow-x: auto; background: var(--console-bg); }
+.sql-result-table { border-collapse: collapse; width: 100%; font: 500 12.5px/1.5 var(--mono); color: var(--console-fg); }
+.sql-result-table th, .sql-result-table td { border: 1px solid rgba(255,255,255,.1); padding: 6px 12px; text-align: left; white-space: nowrap; }
+.sql-result-table th { color: var(--c-route); font-weight: 700; }
 
 /* Rueckseite: rohe Tool-Ergebnisse, je ein Block pro Aufruf, scrollbar bei Bedarf. */
 .flip-back .gr-head { background: var(--console-bg); border-bottom-color: #173029; }
@@ -486,6 +541,44 @@ body {
 .metrics-badge .mb-chip .material-symbols-rounded { font-size: 14px; }
 .metrics-badge .mb-chip.in { color: var(--primary-h); }
 .metrics-badge .mb-chip.out { color: var(--accent2); }
+
+/* --- Token-Usage-Metriken als zentrales Overlay (Evaluator-Optimizer) -----
+   Gleiches Blur-Prinzip wie der Global-Loader: ein fixes Overlay verschwimmt
+   den ganzen Hintergrund, die Metrik-Karte bleibt scharf im Fokus. Klick
+   irgendwohin schliesst (onClick auf dem Overlay). */
+.metrics-overlay {
+  position: fixed; inset: 0; z-index: 90;
+  display: grid; place-items: center;
+  opacity: 0; pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 28%, transparent);
+  backdrop-filter: blur(0px) saturate(1);
+  -webkit-backdrop-filter: blur(0px) saturate(1);
+  transition: opacity .42s cubic-bezier(.4,0,.2,1),
+              backdrop-filter .42s cubic-bezier(.4,0,.2,1),
+              -webkit-backdrop-filter .42s cubic-bezier(.4,0,.2,1);
+}
+.metrics-overlay.active {
+  opacity: 1; pointer-events: auto;
+  backdrop-filter: blur(11px) saturate(1.05);
+  -webkit-backdrop-filter: blur(11px) saturate(1.05);
+}
+.mo-card {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  border: 1px solid var(--outline-soft);
+  border-radius: 24px; padding: 32px 40px;
+  box-shadow: 0 22px 60px -14px rgba(0,0,0,.45);
+  transform: scale(.9); opacity: 0;
+  transition: transform .5s cubic-bezier(.2,1.35,.3,1), opacity .4s ease;
+}
+.metrics-overlay.active .mo-card { transform: scale(1); opacity: 1; }
+.mo-card .metrics-badge { margin: 0; transform: scale(1.1); }
+.mo-title {
+  display: flex; align-items: center; gap: 8px;
+  font: 700 16px/1 var(--font); color: var(--on-surface); letter-spacing: -.01em;
+}
+.mo-title .material-symbols-rounded { font-size: 22px; color: var(--primary); }
+.mo-hint { font: 500 12px/1 var(--mono); color: var(--muted); }
 
 /* --- Globaler LLM-Loader (Spring Orbit) ----------------------------------
    Fixes Overlay: backdrop-filter verschwimmt den GANZEN Screen dahinter,

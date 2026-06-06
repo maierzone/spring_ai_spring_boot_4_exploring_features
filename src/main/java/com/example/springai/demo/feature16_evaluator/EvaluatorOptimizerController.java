@@ -1,10 +1,17 @@
 package com.example.springai.demo.feature16_evaluator;
 
+import java.util.List;
+
+import com.example.springai.demo.feature10_advisors.ModelPricing;
 import com.example.springai.demo.feature14_dbquery.SqlGuard;
+import com.example.springai.demo.feature16_evaluator.SqlEvaluatorOptimizer.Attempt;
 import com.example.springai.demo.feature16_evaluator.SqlEvaluatorOptimizer.Evaluation;
 import com.example.springai.demo.feature16_evaluator.SqlEvaluatorOptimizer.Outcome;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -75,23 +82,30 @@ public class EvaluatorOptimizerController {
     }
 
     @GetMapping("/api/evaluator/sql")
-    public Outcome optimizeSql(
+    public EvaluatorResponse optimizeSql(
             @RequestParam(defaultValue = "Wie viele Versicherte sind aelter als 65 Jahre?")
             String question) {
-        return SqlEvaluatorOptimizer.run(maxIterations, generator(question), evaluator());
+        // Token-Verbrauch ueber ALLE Modellaufrufe der Schleife (Generator + Richter,
+        // pro Iteration) aufsummieren – analog zum Gate-Decider, nur mehrteilig.
+        UsageAccumulator usage = new UsageAccumulator();
+        long startNanos = System.nanoTime();
+        Outcome outcome = SqlEvaluatorOptimizer.run(maxIterations, generator(question, usage), evaluator(usage));
+        long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
+        return new EvaluatorResponse(outcome.success(), outcome.sql(), outcome.attempts(),
+                usage.toMetrics(latencyMs));
     }
 
     /** Erzeugt SQL; ab dem zweiten Versuch mit vorigem Versuch + Kritik im Prompt. */
-    private SqlEvaluatorOptimizer.Generator generator(String question) {
+    private SqlEvaluatorOptimizer.Generator generator(String question, UsageAccumulator usage) {
         return (previousSql, feedback) -> {
-            String content;
+            ChatResponse response;
             if (feedback == null) {
-                content = generatorClient.prompt()
+                response = generatorClient.prompt()
                         .user(u -> u.text("Frage: {q}").param("q", question))
                         .call()
-                        .content();
+                        .chatResponse();
             } else {
-                content = generatorClient.prompt()
+                response = generatorClient.prompt()
                         .user(u -> u.text("""
                                 Frage: {q}
                                 Dein vorheriger Versuch:
@@ -103,14 +117,18 @@ public class EvaluatorOptimizerController {
                                 .param("sql", previousSql)
                                 .param("fb", feedback))
                         .call()
-                        .content();
+                        .chatResponse();
             }
-            return stripCodeFences(content);
+            usage.add(response);
+            return stripCodeFences(response.getResult().getOutput().getText());
         };
     }
 
     /** Geschichtete Bewertung: erst deterministischer SqlGuard, dann LLM-Richter. */
-    private SqlEvaluatorOptimizer.Evaluator evaluator() {
+    private SqlEvaluatorOptimizer.Evaluator evaluator(UsageAccumulator usage) {
+        // Strukturierte Ausgabe manuell (statt .entity(...)): so kommen Evaluation UND
+        // ChatResponse aus EINEM Aufruf – die ChatResponse liefert den Token-Verbrauch.
+        BeanOutputConverter<Evaluation> converter = new BeanOutputConverter<>(Evaluation.class);
         return sql -> {
             try {
                 SqlGuard.sanitize(sql);
@@ -118,10 +136,14 @@ public class EvaluatorOptimizerController {
                 // Billiger Vorfilter schlaegt an – kein Modellaufruf noetig.
                 return new Evaluation(false, "Sicherheits-Check fehlgeschlagen: " + e.getMessage());
             }
-            return evaluatorClient.prompt()
-                    .user(u -> u.text("Bewerte dieses SQL:\n{sql}").param("sql", sql))
+            ChatResponse response = evaluatorClient.prompt()
+                    .user(u -> u.text("Bewerte dieses SQL:\n{sql}\n\n{format}")
+                            .param("sql", sql)
+                            .param("format", converter.getFormat()))
                     .call()
-                    .entity(Evaluation.class);
+                    .chatResponse();
+            usage.add(response);
+            return converter.convert(response.getResult().getOutput().getText());
         };
     }
 
@@ -142,5 +164,51 @@ public class EvaluatorOptimizerController {
             }
         }
         return s.strip();
+    }
+    public record EvaluatorResponse(boolean success, String sql, List<Attempt> attempts,
+                                    EvalMetrics metrics) {
+    }
+
+    public record EvalMetrics(Integer inputTokens, Integer outputTokens, Integer totalTokens,
+                              long latencyMs, Double costUsd) {
+    }
+
+    private static final class UsageAccumulator {
+        private int inputTokens;
+        private int outputTokens;
+        private int totalTokens;
+        private boolean any;
+        private String model;
+
+        void add(ChatResponse response) {
+            if (response == null || response.getMetadata() == null) {
+                return;
+            }
+            if (response.getMetadata().getModel() != null) {
+                model = response.getMetadata().getModel();
+            }
+            Usage u = response.getMetadata().getUsage();
+            if (u == null) {
+                return;
+            }
+            if (u.getPromptTokens() != null) {
+                inputTokens += u.getPromptTokens();
+            }
+            if (u.getCompletionTokens() != null) {
+                outputTokens += u.getCompletionTokens();
+            }
+            if (u.getTotalTokens() != null) {
+                totalTokens += u.getTotalTokens();
+            }
+            any = true;
+        }
+
+        EvalMetrics toMetrics(long latencyMs) {
+            if (!any) {
+                return new EvalMetrics(null, null, null, latencyMs, null);
+            }
+            Double costUsd = ModelPricing.costUsd(model, inputTokens, outputTokens);
+            return new EvalMetrics(inputTokens, outputTokens, totalTokens, latencyMs, costUsd);
+        }
     }
 }

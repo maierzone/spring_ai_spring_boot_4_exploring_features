@@ -212,6 +212,18 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build-info</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- Schliesst die mit @Tag("docker") markierten Integrationstests aus
                  dem Standardlauf aus (siehe Property test.excludedGroups). Der
                  ci-docker.yml-Workflow hebt das per -Dtest.excludedGroups= auf und

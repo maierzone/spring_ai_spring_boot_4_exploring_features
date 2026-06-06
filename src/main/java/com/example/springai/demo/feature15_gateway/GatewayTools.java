@@ -88,7 +88,7 @@ public class GatewayTools {
             + "validieren, eGK-Kartenstatus, ICD-10-Code aufloesen, Zertifikats-Gueltigkeit.")
     public String egkPruefung(
             @ToolParam(description = "Frage zu einer konkreten Nummer/Karte/Diagnose/Zertifikat") String nachricht) {
-        return route("tools", tools.ask(nachricht));
+        return route("tools", tools.ask(nachricht).antwort());
     }
 
     @Tool(description = "Beantwortet Wissensfragen zu Telematik-/eGK-Fachbegriffen aus dem "

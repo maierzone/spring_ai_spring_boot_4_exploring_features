@@ -185,6 +185,7 @@ function GatewayPanel() {
       setResult({ route: body.route, antwort: body.antwort, sqlTrace: body.sqlTrace });
       setFlow(body.flow);
       setMetrics(body.metrics);
+      CostBus.add(body.metrics && body.metrics.costUsd);
     } catch (e) {
       setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
     }
@@ -279,14 +280,17 @@ function ToolsPanel() {
   const [out, setOut] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
+  // Token-Usage-Metriken: erst als breiter Button, auf Klick als zentrales Overlay.
+  const [showMetrics, setShowMetrics] = useState(false);
 
   const go = () => run(async () => {
-    setErr(null); setOut(null);
+    setErr(null); setOut(null); setShowMetrics(false);
     try {
       const res = await fetch("/api/tools?message=" + encodeURIComponent(q));
-      const body = await res.text();
-      if (!res.ok) throw new Error("HTTP " + res.status + " – " + body);
+      const body = await res.json();
+      if (!res.ok) throw new Error("HTTP " + res.status);
       setOut(body);
+      CostBus.add(body.metrics && body.metrics.costUsd);
     } catch (e) {
       setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
     }
@@ -298,7 +302,23 @@ function ToolsPanel() {
       <label className="field-label">Frage</label>
       <div className="field"><Icon name="badge" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
       <div className="row"><Button icon="play_arrow" busy={busy} onClick={go}>run</Button></div>
-      <ConsoleOut text={out} />
+      <ConsoleOut text={out && out.antwort} />
+      {out && out.metrics && !showMetrics && (
+        <div className="row">
+          <Button icon="toll" variant="tonal" onClick={() => setShowMetrics(true)}
+            style={{ width: "100%", justifyContent: "center" }}>
+            Token-Usage-Metriks
+          </Button>
+        </div>
+      )}
+      <div className={"metrics-overlay" + (showMetrics ? " active" : "")}
+        onClick={() => setShowMetrics(false)}>
+        <div className="mo-card">
+          <div className="mo-title"><Icon name="toll" />Token-Usage-Metriken</div>
+          <MetricsBadge m={out && out.metrics} />
+          <div className="mo-hint">irgendwo klicken zum Schließen</div>
+        </div>
+      </div>
       <ConsoleOut text={err} error />
     </Panel>
   );
@@ -499,15 +519,38 @@ function EvaluatorPanel() {
   const [out, setOut] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
+  // Zweiter Flow: die optimierte Query gegen den DB-Execute-Endpoint feuern.
+  const [exec, setExec] = useState(null);
+  const [execErr, setExecErr] = useState(null);
+  const [execBusy, runExec] = useFetch();
+  // Token-Usage-Metriken: erst als breiter Button, auf Klick als zentrales Overlay.
+  const [showMetrics, setShowMetrics] = useState(false);
 
   const go = () => run(async () => {
-    setErr(null); setOut(null);
+    setErr(null); setOut(null); setExec(null); setExecErr(null); setShowMetrics(false);
     try {
       const res = await fetch("/api/evaluator/sql?question=" + encodeURIComponent(q));
       if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
-      setOut(await res.json());
+      const body = await res.json();
+      setOut(body);
+      CostBus.add(body.metrics && body.metrics.costUsd);
     } catch (e) {
       setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
+    }
+  });
+
+  const execute = () => runExec(async () => {
+    setExecErr(null); setExec(null);
+    try {
+      const res = await fetch("/api/db/execute", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: out.sql,
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
+      setExec(await res.json());
+    } catch (e) {
+      setExecErr(e.message + "\n(Ist die DB befüllt?)");
     }
   });
 
@@ -516,7 +559,14 @@ function EvaluatorPanel() {
       hint={<>Generator erzeugt SQL, ein Richter bewertet es gegen das Schema; bei Mängeln fließt die Kritik in einen neuen Versuch – bis akzeptiert oder Limit. Ruft <span className="inline-code">GET /api/evaluator/sql</span> auf.</>}>
       <label className="field-label">Frage</label>
       <div className="field"><Icon name="rule" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
-      <div className="row"><Button icon="play_arrow" busy={busy} onClick={go}>optimize</Button></div>
+      <div className="row">
+        <Button icon="play_arrow" busy={busy} onClick={go}>optimize</Button>
+        {out && out.sql && (
+          <span className="exec-reveal" style={{ marginLeft: "auto" }}>
+            <Button icon="bolt" variant="filled-dark" busy={execBusy} onClick={execute}>Query auf DB ausführen</Button>
+          </span>
+        )}
+      </div>
       {out && (
         <div>
           <div className="viz" style={{ gridTemplateColumns: "1fr 1fr" }}>
@@ -544,8 +594,52 @@ function EvaluatorPanel() {
           ))}
         </div>
       )}
+      {out && out.metrics && !showMetrics && (
+        <div className="row">
+          <Button icon="toll" variant="tonal" onClick={() => setShowMetrics(true)}
+            style={{ width: "100%", justifyContent: "center" }}>
+            Token-Usage-Metriks
+          </Button>
+        </div>
+      )}
+      <div className={"metrics-overlay" + (showMetrics ? " active" : "")}
+        onClick={() => setShowMetrics(false)}>
+        <div className="mo-card">
+          <div className="mo-title"><Icon name="toll" />Token-Usage-Metriken</div>
+          <MetricsBadge m={out && out.metrics} />
+          <div className="mo-hint">irgendwo klicken zum Schließen</div>
+        </div>
+      </div>
+      <SqlResultTable result={exec} />
       <ConsoleOut text={err} error />
+      <ConsoleOut text={execErr} error />
     </Panel>
+  );
+}
+
+// Rendert das Ergebnis von POST /api/db/execute als Tabelle.
+function SqlResultTable({ result }) {
+  if (!result) return null;
+  const { sql, columns, rows } = result;
+  return (
+    <div className="console-block" style={{ marginTop: 12 }}>
+      <div className="gr-head">
+        <span className="gr-route"><Icon name="database" />{rows.length} Zeile(n)</span>
+      </div>
+      <div className="console" style={{ paddingBottom: 8 }}>{sql}</div>
+      {rows.length > 0 && (
+        <div className="sql-result-wrap">
+          <table className="sql-result-table">
+            <thead><tr>{columns.map((c, i) => <th key={i}>{c}</th>)}</tr></thead>
+            <tbody>
+              {rows.map((r, ri) => (
+                <tr key={ri}>{r.map((v, ci) => <td key={ci}>{v === null ? "∅" : String(v)}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
   );
 }
 
