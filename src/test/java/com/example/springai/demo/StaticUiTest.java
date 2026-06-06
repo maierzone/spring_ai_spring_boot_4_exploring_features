@@ -25,7 +25,7 @@ class StaticUiTest {
     void indexSeiteVorhandenUndBindetAssetsEin() throws Exception {
         String html = read("static/index.html");
         assertThat(html)
-                .contains("Developer-Konsole")
+                .contains("Exploration")
                 .contains("styles.css")
                 .contains("app.js")
                 // ruft die Dev-Feature-Endpunkte auf
@@ -54,6 +54,6 @@ class StaticUiTest {
                 // im PANELS-Register eingetragen
                 .contains("docsrag: DocsRagPanel");
         // im Navigations-Menue registriert
-        assertThat(read("static/components.jsx")).contains("Docs-RAG Pipeline");
+        assertThat(read("static/components.jsx")).contains("Exploration");
     }
 }

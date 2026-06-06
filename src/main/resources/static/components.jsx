@@ -33,7 +33,23 @@ function ThemeSwitch() {
   );
 }
 
+// Reihenfolge + Anzeigenamen der Versions-Badges. Die Werte selbst stammen aus
+// /actuator/info (gespeist aus der pom.xml), Schlüssel = info.versions.<key>.
+const VERSION_CHIPS = [
+  { key: "spring-boot", label: "Spring Boot" },
+  { key: "spring-ai",   label: "Spring AI" },
+  { key: "java",        label: "Java" },
+];
+
 function TopAppBar() {
+  // Versionen einmalig vom Actuator-Info-Endpoint laden (kein LoaderBus: still).
+  const [versions, setVersions] = React.useState(null);
+  React.useEffect(() => {
+    fetch("/actuator/info")
+      .then(r => r.ok ? r.json() : Promise.reject(r.status))
+      .then(info => setVersions(info.versions || {}))
+      .catch(() => setVersions({}));
+  }, []);
   return (
     <header className="appbar">
       <div className="win-dots"><span className="wd r"></span><span className="wd y"></span><span className="wd g"></span></div>
@@ -56,9 +72,11 @@ function TopAppBar() {
       <div className="spacer"></div>
       <ThemeSwitch />
       <div className="chips">
-        <span className="stat-chip">Spring Boot 4.0.6</span>
-        <span className="stat-chip">Spring AI 2.0.0-M8</span>
-        <span className="stat-chip">Java 21</span>
+        {versions && VERSION_CHIPS
+          .filter(c => versions[c.key])
+          .map(c => (
+            <span key={c.key} className="stat-chip">{c.label} {versions[c.key]}</span>
+          ))}
       </div>
       <div className="key-pill"><span className="dot"></span>Claude · API-Key aktiv</div>
     </header>
