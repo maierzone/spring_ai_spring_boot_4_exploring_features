@@ -38,13 +38,12 @@ public class SpecPdfProcessor {
     public int process(Resource pdf, String spec, String version, String source) {
         List<Document> pages = new PagePdfDocumentReader(pdf).read();
         // Chunk-Groesse an das Embedding-Modell koppeln: paraphrase-multilingual-
-        // MiniLM-L12-v2 hat eine maximale Sequenzlaenge von 128 Tokens. Der
-        // TokenTextSplitter-Default (800 Tokens) wuerde dazu fuehren, dass das
-        // Modell jeden Chunk auf die ersten ~128 Tokens abschneidet und der
-        // restliche Text gar nicht ins Embedding einfliesst - die Vektoren
-        // repraesentieren dann nur den Chunk-Anfang und die Aehnlichkeitssuche
-        // trifft schlecht. Mit 128 Tokens passt jeder Chunk vollstaendig ins
-        // Modell-Fenster.
+        // MiniLM-L12-v2 hat eine maximale Sequenzlaenge von 128 Tokens. Groessere
+        // Chunks wuerden auf die ersten ~128 Tokens abgeschnitten, sodass der Rest
+        // gar nicht ins Embedding einfliesst und die Aehnlichkeitssuche schlecht
+        // trifft. Mit 128 Tokens passt jeder Chunk vollstaendig ins Modell-Fenster.
+        // (Erst ein Modell mit groesserem Kontextfenster erlaubt groessere Chunks -
+        // siehe TODO in application-specs.properties.)
         TokenTextSplitter splitter = TokenTextSplitter.builder()
                 .withChunkSize(128)
                 .withMinChunkSizeChars(200)

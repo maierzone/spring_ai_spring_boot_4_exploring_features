@@ -54,13 +54,16 @@ public class GatewayController {
     private final GatewayTools gatewayTools;
     private final RouteRecorder recorder;
     private final CallFlowRecorder callFlow;
+    private final SqlTraceRecorder sqlTrace;
 
     public GatewayController(ChatClient.Builder builder, GatewayTools gatewayTools,
-                             RouteRecorder recorder, CallFlowRecorder callFlow) {
+                             RouteRecorder recorder, CallFlowRecorder callFlow,
+                             SqlTraceRecorder sqlTrace) {
         this.chatClient = builder.defaultSystem(SYSTEM_PROMPT).build();
         this.gatewayTools = gatewayTools;
         this.recorder = recorder;
         this.callFlow = callFlow;
+        this.sqlTrace = sqlTrace;
     }
 
     @GetMapping("/api/gateway")
@@ -69,27 +72,31 @@ public class GatewayController {
         // Ab hier den echten Methoden-Aufruf-Flow mitschneiden (siehe CallFlowAspect),
         // mit dieser Endpunkt-Methode als Wurzel des Aufruf-Baums.
         callFlow.start("GatewayController.route(String)", "GET /api/gateway");
+        // Parallel die rohen DB-Tool-Ergebnisse mitschneiden (Rueckseite der Antwort-Karte).
+        sqlTrace.start();
         // Wall-Clock-Messung der gesamten Routing-Verarbeitung (Modellaufruf inkl.
         // der synchron im Tool ausgefuehrten Feature-Delegation).
         long startNanos = System.nanoTime();
         ChatResponse chatResponse = null;
         List<CallNode> flow;
+        List<SqlTraceRecorder.Entry> trace;
         try {
             // Das Modell waehlt und ruft genau ein Gate-Tool; dessen Wahl landet im
             // request-scoped Recorder. Die freie Schlussantwort des Modells ignorieren wir,
             // lesen aus der ChatResponse aber den Token-Verbrauch dieser Anfrage.
             chatResponse = chatClient.prompt().user(question).tools(gatewayTools).call().chatResponse();
         } finally {
-            // Immer einsammeln (auch bei Fehler) – raeumt zugleich den Thread-Local auf.
+            // Immer einsammeln (auch bei Fehler) – raeumt zugleich die Thread-Locals auf.
             flow = callFlow.stopAndCollect();
+            trace = sqlTrace.stopAndCollect();
         }
         long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
         RouteMetrics metrics = RouteMetrics.from(usageOf(chatResponse), modelOf(chatResponse), latencyMs);
 
         if (recorder.isResolved()) {
-            return new GatewayResponse(recorder.route(), recorder.antwort(), flow, metrics);
+            return new GatewayResponse(recorder.route(), recorder.antwort(), flow, metrics, trace);
         }
-        return new GatewayResponse("none", "Keine passende Funktion gefunden.", flow, metrics);
+        return new GatewayResponse("none", "Keine passende Funktion gefunden.", flow, metrics, trace);
     }
 
     /** Token-Verbrauch aus den Antwort-Metadaten lesen, sofern vorhanden. */
@@ -110,10 +117,13 @@ public class GatewayController {
 
     /**
      * Transparente Antwort des Gate-Deciders: gewaehlte Route, durchgereichte Antwort,
-     * der mitgeschnittene Methoden-Aufruf-Flow ({@link CallNode}-Baum) und die
-     * aufgewendeten Ressourcen dieser Anfrage ({@link RouteMetrics}).
+     * der mitgeschnittene Methoden-Aufruf-Flow ({@link CallNode}-Baum), die
+     * aufgewendeten Ressourcen dieser Anfrage ({@link RouteMetrics}) und – auf der
+     * DB-Route – die rohen Tool-Ergebnisse ({@link SqlTraceRecorder.Entry}) fuer die
+     * Rueckseite der umklappbaren Antwort-Karte.
      */
-    public record GatewayResponse(String route, String antwort, List<CallNode> flow, RouteMetrics metrics) {
+    public record GatewayResponse(String route, String antwort, List<CallNode> flow,
+                                  RouteMetrics metrics, List<SqlTraceRecorder.Entry> sqlTrace) {
     }
 
     /**

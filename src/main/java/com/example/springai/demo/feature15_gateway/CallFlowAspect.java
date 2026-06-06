@@ -31,24 +31,48 @@ public class CallFlowAspect {
 
     private static final String BASE = "com.example.springai.demo";
 
-    private final CallFlowRecorder recorder;
+    /** Klassen, deren rohe String-Rueckgabe als DB-Tool-Ergebnis mitgeschnitten wird. */
+    private static final java.util.Set<String> SQL_TOOL_CLASSES =
+            java.util.Set.of("EgkQueryTools", "ReadOnlySqlTool");
 
-    public CallFlowAspect(CallFlowRecorder recorder) {
+    private final CallFlowRecorder recorder;
+    private final SqlTraceRecorder sqlTrace;
+
+    public CallFlowAspect(CallFlowRecorder recorder, SqlTraceRecorder sqlTrace) {
         this.recorder = recorder;
+        this.sqlTrace = sqlTrace;
     }
 
     @Around("execution(* com.example.springai.demo..*(..)) "
             + "&& !within(com.example.springai.demo.feature15_gateway.CallFlowAspect) "
-            + "&& !within(com.example.springai.demo.feature15_gateway.CallFlowRecorder)")
+            + "&& !within(com.example.springai.demo.feature15_gateway.CallFlowRecorder) "
+            + "&& !within(com.example.springai.demo.feature15_gateway.SqlTraceRecorder)")
     public Object trace(ProceedingJoinPoint pjp) throws Throwable {
         if (!recorder.isRecording()) {
             return pjp.proceed();
         }
         recorder.enter(label(pjp), callerLocation());
         try {
-            return pjp.proceed();
+            Object result = pjp.proceed();
+            captureSqlResult(pjp, result);
+            return result;
         } finally {
             recorder.exit();
+        }
+    }
+
+    /**
+     * Haelt die rohe String-Rueckgabe eines DB-Tool-Aufrufs im {@link SqlTraceRecorder}
+     * fest – also genau die Zahlen/Zeilen, die das Tool an das Modell zurueckgab, bevor
+     * dieses daraus Fliesstext machte. Nur waehrend einer aktiven Gateway-Aufzeichnung.
+     */
+    private void captureSqlResult(ProceedingJoinPoint pjp, Object result) {
+        if (!sqlTrace.isRecording() || !(result instanceof String raw)) {
+            return;
+        }
+        MethodSignature sig = (MethodSignature) pjp.getSignature();
+        if (SQL_TOOL_CLASSES.contains(sig.getDeclaringType().getSimpleName())) {
+            sqlTrace.record(label(pjp), raw);
         }
     }
 

@@ -27,6 +27,9 @@ public class DateTimeTools {
         return LocalDateTime.now().toString();
     }
 
+
+
+
     /**
      * Beispiel für ein Tool mit Parameter: gibt den Wochentag zu einem Datum
      * zurück. {@link ToolParam} dokumentiert das Argument für das Modell.

@@ -66,23 +66,56 @@ const FEATURES = [
   { id: "moderation", icon: "shield",         name: "Moderation",        endpoint: "/api/moderation" },
 ];
 
+// Gruppierung der Nav-Items in drei einklappbare Themenblöcke.
+const NAV_GROUPS = [
+  { label: "Agentic Patterns",            icon: "smart_toy",     ids: ["gateway", "tools", "evaluator"] },
+  { label: "Retrieval & Daten (pgvector)", icon: "database",      ids: ["rag", "docsrag", "db", "pgvector"] },
+  { label: "LLM-Bausteine",               icon: "deployed_code", ids: ["structured", "moderation", "advisors"] },
+];
+
+const FEATURE_BY_ID = Object.fromEntries(FEATURES.map(f => [f.id, f]));
+
 function NavDrawer({ active, onSelect }) {
+  // Alle Gruppen initial offen; Set hält die eingeklappten Labels.
+  const [collapsed, setCollapsed] = React.useState(() => new Set());
+  const toggle = (label) => setCollapsed(prev => {
+    const next = new Set(prev);
+    next.has(label) ? next.delete(label) : next.add(label);
+    return next;
+  });
   return (
     <nav className="nav">
-      <div className="nav-label">Features</div>
-      {FEATURES.map(f => (
-        <button
-          key={f.id}
-          className={"nav-item" + (active === f.id ? " active" : "")}
-          onClick={() => onSelect(f.id)}
-        >
-          <Icon name={f.icon} />
-          <span className="ni-text">
-            <span className="ni-name">{f.name}</span>
-            <span className="ni-end">{f.endpoint}</span>
-          </span>
-        </button>
-      ))}
+      {NAV_GROUPS.map(group => {
+        const open = !collapsed.has(group.label);
+        return (
+          <div key={group.label} className={"nav-group" + (open ? " open" : "")}>
+            <button
+              className="nav-group-head"
+              onClick={() => toggle(group.label)}
+              aria-expanded={open}
+            >
+              <Icon name={group.icon} className="ngh-icon" />
+              <span className="ngh-label">{group.label}</span>
+              <Icon name="expand_more" className="ngh-chevron" />
+            </button>
+            <div className="nav-group-items">
+              {group.ids.map(id => FEATURE_BY_ID[id]).map(f => (
+                <button
+                  key={f.id}
+                  className={"nav-item" + (active === f.id ? " active" : "")}
+                  onClick={() => onSelect(f.id)}
+                >
+                  <Icon name={f.icon} />
+                  <span className="ni-text">
+                    <span className="ni-name">{f.name}</span>
+                    <span className="ni-end">{f.endpoint}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </nav>
   );
 }
@@ -121,4 +154,4 @@ function GlobalLoader() {
   );
 }
 
-Object.assign(window, { Icon, Button, TopAppBar, NavDrawer, FEATURES, LoaderBus, GlobalLoader });
+Object.assign(window, { Icon, Button, TopAppBar, NavDrawer, FEATURES, NAV_GROUPS, LoaderBus, GlobalLoader });

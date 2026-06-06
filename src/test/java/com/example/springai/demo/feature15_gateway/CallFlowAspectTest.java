@@ -46,7 +46,7 @@ class CallFlowAspectTest {
     @Test
     void zeichnetVerschachteltenAufrufBaumAuf() {
         CallFlowRecorder recorder = new CallFlowRecorder();
-        CallFlowAspect aspect = new CallFlowAspect(recorder);
+        CallFlowAspect aspect = new CallFlowAspect(recorder, new SqlTraceRecorder());
 
         Inner inner = weave(new Inner(), aspect);
         Outer outer = weave(new Outer(inner), aspect);
@@ -69,7 +69,7 @@ class CallFlowAspectTest {
     @Test
     void ohneStartWirdNichtsAufgezeichnet() {
         CallFlowRecorder recorder = new CallFlowRecorder();
-        CallFlowAspect aspect = new CallFlowAspect(recorder);
+        CallFlowAspect aspect = new CallFlowAspect(recorder, new SqlTraceRecorder());
         Outer outer = weave(new Outer(weave(new Inner(), aspect)), aspect);
 
         outer.work(); // keine Aufzeichnung aktiv -> Aspekt reicht nur durch

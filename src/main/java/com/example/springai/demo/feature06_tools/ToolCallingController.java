@@ -26,15 +26,18 @@ public class ToolCallingController {
 
     private final ChatClient chatClient;
     private final EgkCheckTools egkCheckTools;
+    private final StammdatenPlausibilitaetTool stammdatenTool;
 
     /**
-     * {@link EgkCheckTools} kommt per DI aus dem Spring-Kontext (kapselt den
-     * {@link EgkCheckService}). {@link DateTimeTools} hat keinen Zustand und wird
-     * einfach direkt instanziiert.
+     * {@link EgkCheckTools} und {@link StammdatenPlausibilitaetTool} kommen per DI
+     * aus dem Spring-Kontext (beide kapseln den {@link EgkCheckService}).
+     * {@link DateTimeTools} hat keinen Zustand und wird einfach direkt instanziiert.
      */
-    public ToolCallingController(ChatClient.Builder builder, EgkCheckTools egkCheckTools) {
+    public ToolCallingController(ChatClient.Builder builder, EgkCheckTools egkCheckTools,
+            StammdatenPlausibilitaetTool stammdatenTool) {
         this.chatClient = builder.build();
         this.egkCheckTools = egkCheckTools;
+        this.stammdatenTool = stammdatenTool;
     }
 
     @GetMapping("/api/tools")
@@ -43,7 +46,7 @@ public class ToolCallingController {
                 .user(message)
                 // Beide Werkzeug-Sammlungen fuer diese Anfrage anbieten. Das Modell
                 // waehlt selbst aus, welches Tool (falls ueberhaupt) es aufruft.
-                .tools(egkCheckTools, new DateTimeTools())
+                .tools(egkCheckTools, stammdatenTool, new DateTimeTools())
                 .call()
                 .content();
     }

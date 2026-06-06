@@ -115,22 +115,74 @@ function MetricsBadge({ m }) {
   );
 }
 
+// Rendert Markdown-Text als HTML (marked, via CDN geladen). Faellt auf rohen
+// Text zurueck, falls marked (noch) nicht verfuegbar ist.
+function Markdown({ text }) {
+  const html = (typeof marked !== "undefined")
+    ? marked.parse(text || "", { breaks: true })
+    : null;
+  if (html == null) return <div className="md">{text}</div>;
+  return <div className="md" dangerouslySetInnerHTML={{ __html: html }} />;
+}
+
+// Antwort-Karte des Gate-Deciders: Vorderseite = als Markdown gerenderte
+// LLM-Antwort. Auf der DB-Route per Doppelklick smooth in 3D umklappbar –
+// die Rueckseite zeigt die rohen Tool-Ergebnisse (eine Karte pro Aufruf).
+function GatewayResult({ result }) {
+  const [flipped, setFlipped] = useState(false);
+  // Bei neuer Antwort immer auf der Vorderseite (Markdown) starten.
+  React.useEffect(() => { setFlipped(false); }, [result]);
+  if (!result) return null;
+
+  const { route, antwort, sqlTrace } = result;
+  const canFlip = route === "db" && sqlTrace && sqlTrace.length > 0;
+
+  return (
+    <div className={"console-block flip-card" + (flipped ? " flipped" : "")}
+      onDoubleClick={canFlip ? () => setFlipped(f => !f) : undefined}>
+      <div className="flip-inner">
+        <div className="flip-face flip-front">
+          <div className="gr-head">
+            <span className="gr-route"><Icon name="alt_route" />Route: {route}</span>
+            {canFlip && <span className="flip-hint"><Icon name="flip" />Doppelklick → SQL-Rohdaten</span>}
+          </div>
+          <div className="md-body"><Markdown text={antwort} /></div>
+        </div>
+        <div className="flip-face flip-back">
+          <div className="gr-head">
+            <span className="gr-route"><Icon name="database" />Rohe Tool-Ergebnisse</span>
+            <span className="flip-hint"><Icon name="flip" />Doppelklick zurück</span>
+          </div>
+          <div className="sql-trace">
+            {canFlip && sqlTrace.map((e, i) => (
+              <div className="sql-entry" key={i}>
+                <div className="sql-tool"><Icon name="function" />{e.tool}</div>
+                <div className="console">{e.raw}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Gate-Decider ---------------------------------------------------------
 function GatewayPanel() {
   const [q, setQ] = useState("Wie viele Versicherte haben E11.9?");
-  const [out, setOut] = useState(null);
+  const [result, setResult] = useState(null);
   const [flow, setFlow] = useState(null);
   const [metrics, setMetrics] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
 
   const go = () => run(async () => {
-    setErr(null); setOut(null); setFlow(null); setMetrics(null);
+    setErr(null); setResult(null); setFlow(null); setMetrics(null);
     try {
       const res = await fetch("/api/gateway?question=" + encodeURIComponent(q));
       const body = await res.json();
       if (!res.ok) throw new Error("HTTP " + res.status);
-      setOut("→ Route: " + body.route + "\n\n" + body.antwort);
+      setResult({ route: body.route, antwort: body.antwort, sqlTrace: body.sqlTrace });
       setFlow(body.flow);
       setMetrics(body.metrics);
     } catch (e) {
@@ -145,7 +197,7 @@ function GatewayPanel() {
       <div className="field"><Icon name="forum" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
       <div className="row"><Button icon="alt_route" busy={busy} onClick={go}>route</Button></div>
       <MetricsBadge m={metrics} />
-      <ConsoleOut text={out} />
+      <GatewayResult result={result} />
       <FlowChain flow={flow} />
       <ConsoleOut text={err} error />
     </Panel>
@@ -582,7 +634,22 @@ function DocsRagPanel() {
   const [err, setErr] = React.useState(null);
   const [busy, run] = useFetch();
 
+  // Hybrid-Suche (lexikalisch exakt + semantisch) ueber die ingestierten Chunks.
+  const [query, setQuery] = React.useState("OCSP");
+  const [hits, setHits] = React.useState(null);
+  const [searchErr, setSearchErr] = React.useState(null);
+  const [searching, runSearch] = useFetch();
+
   const HINT = "\n(Läuft die App mit Profil 'specs'? Endpunkte gibt es nur dort.)";
+
+  const doSearch = () => runSearch(async () => {
+    setSearchErr(null); setHits(null);
+    try {
+      const res = await fetch("/api/docs-rag/search?topK=8&question=" + encodeURIComponent(query));
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
+      setHits(await res.json());
+    } catch (e) { setSearchErr(e.message + HINT); }
+  });
 
   const loadStats = async () => {
     try {
@@ -656,6 +723,13 @@ function DocsRagPanel() {
       </div>
       {msg && <ConsoleOut text={msg} />}
       <ConsoleOut text={err} error />
+
+      <label className="field-label" style={{ marginTop: 22 }}>Hybrid-Suche · exakt + semantisch</label>
+      <div className="field"><Icon name="search" /><input value={query} onChange={e => setQuery(e.target.value)}
+        onKeyDown={e => e.key === "Enter" && doSearch()} placeholder="z. B. OCSP, C.CH.AUT, gemSpec_PKI …" /></div>
+      <div className="row"><Button icon="travel_explore" busy={searching} onClick={doSearch}>suchen</Button></div>
+      <SourceList items={hits} />
+      <ConsoleOut text={searchErr} error />
     </Panel>
   );
 }
