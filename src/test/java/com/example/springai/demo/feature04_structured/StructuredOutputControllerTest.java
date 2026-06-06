@@ -57,7 +57,7 @@ class StructuredOutputControllerTest {
                 new StructuredOutputController(ChatClient.builder(chatModel), ticketRepository);
 
         String ticketText = "Nach dem Update kann ich mich nicht mehr einloggen!";
-        TicketAnalysis result = controller.analyzeTicket(ticketText);
+        TicketAnalysis result = controller.analyzeTicket(ticketText).analysis();
 
         assertThat(result.category()).isEqualTo(Category.BUG);
         assertThat(result.priority()).isEqualTo(Priority.HIGH);

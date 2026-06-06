@@ -65,7 +65,7 @@ class ModerationControllerTest {
                 "{\"flagged\": true, \"categories\": [\"hate\"], \"reason\": \"Reizwort\"}");
         ModerationController controller = new ModerationController(ChatClient.builder(chatModel));
 
-        String answer = controller.ask("Eine unzulaessige Eingabe");
+        String answer = controller.ask("Eine unzulaessige Eingabe").antwort();
 
         assertThat(answer).isEqualTo(ModerationGuardrailAdvisor.BLOCKED_INPUT);
         // Nur die Eingabe-Moderation laeuft; die Kette (und damit ein weiterer Modellaufruf) entfaellt.

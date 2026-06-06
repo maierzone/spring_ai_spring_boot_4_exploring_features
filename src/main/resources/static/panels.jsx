@@ -115,6 +115,33 @@ function MetricsBadge({ m }) {
   );
 }
 
+// Breiter "Token-Usage-Metriks"-Button, der auf Klick die MetricsBadge als
+// zentrales, geblurrtes Overlay zeigt (Klick irgendwohin schliesst). Kapselt das
+// Muster, das Evaluator/Tools inline hatten, fuer die wiederverwendung.
+function MetricsReveal({ metrics }) {
+  const [show, setShow] = useState(false);
+  if (!metrics) return null;
+  return (
+    <React.Fragment>
+      {!show && (
+        <div className="row">
+          <Button icon="toll" variant="tonal" onClick={() => setShow(true)}
+            style={{ width: "100%", justifyContent: "center" }}>
+            Token-Usage-Metriks
+          </Button>
+        </div>
+      )}
+      <div className={"metrics-overlay" + (show ? " active" : "")} onClick={() => setShow(false)}>
+        <div className="mo-card">
+          <div className="mo-title"><Icon name="toll" />Token-Usage-Metriken</div>
+          <MetricsBadge m={metrics} />
+          <div className="mo-hint">irgendwo klicken zum Schließen</div>
+        </div>
+      </div>
+    </React.Fragment>
+  );
+}
+
 // Rendert Markdown-Text als HTML (marked, via CDN geladen). Faellt auf rohen
 // Text zurueck, falls marked (noch) nicht verfuegbar ist.
 function Markdown({ text }) {
@@ -214,11 +241,12 @@ const SENT_MAP = { NEGATIVE: { pos: "16%", color: "#ef4444" }, NEUTRAL: { pos: "
 function StructuredPanel() {
   const [text, setText] = useState("Nach dem letzten Update kann ich mich nicht mehr einloggen. Das ist extrem ärgerlich, ich brauche dringend eine Lösung!");
   const [a, setA] = useState(null);
+  const [metrics, setMetrics] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
 
   const analyze = () => run(async () => {
-    setErr(null); setA(null);
+    setErr(null); setA(null); setMetrics(null);
     try {
       const res = await fetch("/api/tickets/analyze", {
         method: "POST",
@@ -226,7 +254,10 @@ function StructuredPanel() {
         body: text,
       });
       if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
-      setA(await res.json());
+      const body = await res.json();
+      setA(body.analysis);
+      setMetrics(body.metrics);
+      CostBus.add(body.metrics && body.metrics.costUsd);
     } catch (e) {
       setErr("Analyse fehlgeschlagen: " + e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
     }
@@ -269,6 +300,7 @@ function StructuredPanel() {
           </div>
         </div>
       )}
+      <MetricsReveal metrics={metrics} />
       <ConsoleOut text={err} error />
     </Panel>
   );
@@ -832,24 +864,27 @@ function DocsRagPanel() {
 function ModerationPanel() {
   const [text, setText] = useState("Erklaere kurz, was Content-Moderation ist.");
   const [out, setOut] = useState(null);
+  const [metrics, setMetrics] = useState(null);
   const [verdict, setVerdict] = useState(null);
   const [err, setErr] = useState(null);
   const [busy, run] = useFetch();
 
   const ask = () => run(async () => {
-    setErr(null); setOut(null); setVerdict(null);
+    setErr(null); setOut(null); setVerdict(null); setMetrics(null);
     try {
       const res = await fetch("/api/moderation?message=" + encodeURIComponent(text));
-      const body = await res.text();
-      if (!res.ok) throw new Error("HTTP " + res.status + " – " + body);
-      setOut(body);
+      if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
+      const body = await res.json();
+      setOut(body.antwort);
+      setMetrics(body.metrics);
+      CostBus.add(body.metrics && body.metrics.costUsd);
     } catch (e) {
       setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
     }
   });
 
   const check = () => run(async () => {
-    setErr(null); setOut(null); setVerdict(null);
+    setErr(null); setOut(null); setVerdict(null); setMetrics(null);
     try {
       const res = await fetch("/api/moderation/check?text=" + encodeURIComponent(text));
       if (!res.ok) throw new Error("HTTP " + res.status + " – " + (await res.text()));
@@ -895,6 +930,7 @@ function ModerationPanel() {
           )}
         </div>
       )}
+      <MetricsReveal metrics={metrics} />
       <ConsoleOut text={err} error />
     </Panel>
   );
@@ -916,6 +952,7 @@ function AdvisorsPanel() {
       if (!res.ok) throw new Error("HTTP " + res.status);
       setOut(body.answer);
       setMetrics(body.metrics);
+      CostBus.add(body.metrics && body.metrics.costUsd);
     } catch (e) {
       setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt?)");
     }
@@ -951,6 +988,7 @@ function AdvisorsPanel() {
           </div>
         </div>
       )}
+      <MetricsReveal metrics={metrics} />
       <ConsoleOut text={err} error />
     </Panel>
   );

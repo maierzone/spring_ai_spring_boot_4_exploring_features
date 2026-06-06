@@ -3,8 +3,12 @@ package com.example.springai.demo.feature04_structured;
 import java.util.List;
 
 import com.example.springai.demo.feature04_structured.TicketRepository.CategoryCount;
+import com.example.springai.demo.feature10_advisors.ModelPricing;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.metadata.Usage;
+import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -83,18 +87,60 @@ public class StructuredOutputController {
     }
 
     @PostMapping("/api/tickets/analyze")
-    public TicketAnalysis analyzeTicket(@RequestBody String ticketText) {
-        TicketAnalysis analysis = chatClient.prompt()
+    public AnalyzeResponse analyzeTicket(@RequestBody String ticketText) {
+        // Strukturierte Ausgabe manuell ueber den BeanOutputConverter (statt .entity(...)):
+        // so kommen typisierte Analyse UND ChatResponse (Token-Verbrauch) aus EINEM Aufruf.
+        BeanOutputConverter<TicketAnalysis> converter = new BeanOutputConverter<>(TicketAnalysis.class);
+        long startNanos = System.nanoTime();
+        ChatResponse response = chatClient.prompt()
                 .user(u -> u.text("Analysiere das folgende Support-Ticket und fuelle die "
-                        + "Felder aus:\n\n{ticket}").param("ticket", ticketText))
-                // Das Ergebnis wird direkt in den typisierten Record geparst –
-                // inklusive Mapping der Strings auf die Enum-Konstanten.
+                        + "Felder aus:\n\n{ticket}\n\n{format}")
+                        .param("ticket", ticketText)
+                        .param("format", converter.getFormat()))
                 .call()
-                .entity(TicketAnalysis.class);
+                .chatResponse();
+        long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
+        TicketAnalysis analysis = converter.convert(response.getResult().getOutput().getText());
         // Feature E: die typisierte Analyse landet in PostgreSQL und ist damit
         // auswertbar (siehe /api/tickets/stats).
         ticketRepository.save(analysis, ticketText);
-        return analysis;
+        return new AnalyzeResponse(analysis, AnalyzeMetrics.from(usageOf(response), modelOf(response), latencyMs));
+    }
+
+    /** Token-Verbrauch aus den Antwort-Metadaten lesen, sofern vorhanden. */
+    private static Usage usageOf(ChatResponse response) {
+        if (response == null || response.getMetadata() == null) {
+            return null;
+        }
+        return response.getMetadata().getUsage();
+    }
+
+    /** Modell-Id aus den Antwort-Metadaten lesen (fuer die Kostenabschaetzung). */
+    private static String modelOf(ChatResponse response) {
+        if (response == null || response.getMetadata() == null) {
+            return null;
+        }
+        return response.getMetadata().getModel();
+    }
+
+    /** Antwort der Ticket-Analyse: die typisierte Analyse plus die Ressourcen-Metriken. */
+    public record AnalyzeResponse(TicketAnalysis analysis, AnalyzeMetrics metrics) {
+    }
+
+    /** Ressourcenverbrauch fuer die Badge-Anzeige (gleiche Felder wie bei den uebrigen Features). */
+    public record AnalyzeMetrics(Integer inputTokens, Integer outputTokens, Integer totalTokens,
+                                 long latencyMs, Double costUsd) {
+
+        static AnalyzeMetrics from(Usage usage, String model, long latencyMs) {
+            if (usage == null) {
+                return new AnalyzeMetrics(null, null, null, latencyMs, null);
+            }
+            Integer inputTokens = usage.getPromptTokens();
+            Integer outputTokens = usage.getCompletionTokens();
+            Double costUsd = (inputTokens != null && outputTokens != null)
+                    ? ModelPricing.costUsd(model, inputTokens, outputTokens) : null;
+            return new AnalyzeMetrics(inputTokens, outputTokens, usage.getTotalTokens(), latencyMs, costUsd);
+        }
     }
 
     /**
