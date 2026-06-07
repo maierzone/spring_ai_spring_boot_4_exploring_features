@@ -7,20 +7,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * FEATURE 18 – Ableitung des gemspec-Dokumentenkatalogs aus der {@code sitemap.xml}.
- *
- * <p>Reine, zustands- und abhängigkeitsfreie Logik (kein Spring, kein HTTP, keine
- * DB) – damit offline und ohne Netz testbar. Die Sitemap listet HTML-Doc-Seiten der
- * Form {@code /docs/{Kategorie}/{Gruppe}/{Name}_V{Version}/}; die zugehörige PDF-URL
- * entsteht durch Ersetzen von {@code /docs/} durch {@code /downloads/} und Anhängen
- * von {@code .pdf}.</p>
- *
- * <p>Gefiltert wird auf <b>versionierte Blätter</b> ({@code ..._V<Ziffer>}); damit
- * fallen Kategorie-/Gruppen-Seiten, {@code latest}-Aliasse und {@code _Draft}-Stände
- * automatisch heraus. {@code _Aend}-Änderungslisten werden bewusst ausgeschlossen
- * (oft ohne eigenes PDF).</p>
- */
+
 public final class SpecCatalog {
 
     /** Ein ableitbares Spec-PDF aus dem Katalog. */

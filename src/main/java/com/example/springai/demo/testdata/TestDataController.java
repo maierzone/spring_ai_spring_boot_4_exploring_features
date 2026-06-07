@@ -8,19 +8,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * REST-Schnittstelle fuer den eGK-/Gesundheits-/PKI-Testdaten-Generator.
- *
- * <p>Befuellt PostgreSQL on demand mit einem grossen, rein synthetischen
- * (DSGVO-sicheren) Datenbestand – ideal, um Queries, Reports und Analytics auf
- * realistisch strukturierten, aber unbedenklichen Daten auszuprobieren.</p>
- *
- * <ul>
- *   <li>{@code POST /api/testdata/generate?count=10000&seed=42} – erzeugt den
- *       Datensatz deterministisch und ersetzt den bisherigen Bestand.</li>
- *   <li>{@code GET  /api/testdata/stats} – Zeilenzahlen je Tabelle + Status-Verteilung.</li>
- * </ul>
- */
 @RestController
 public class TestDataController {
 

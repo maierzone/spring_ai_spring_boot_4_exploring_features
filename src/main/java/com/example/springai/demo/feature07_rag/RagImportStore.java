@@ -25,30 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * FEATURE 7 – <b>lexikalischer</b> Import-Speicher für eigene Dokumente.
- *
- * <p><b>Warum lexikalisch statt Embedding?</b><br>
- * Die Embedding-/Vektorsuche ({@code similaritySearch}) misst <em>semantische</em>
- * Nähe über die Kosinus-Ähnlichkeit dichter Vektoren. Bei exakten Stichwort-/
- * Phrasen-Treffern liefert sie strukturell niedrige Scores: ein langer Chunk
- * enthält viele Tokens, die in der kurzen Anfrage fehlen, was das normalisierte
- * Skalarprodukt nach unten zieht – ein 6-Wort-Exaktmatch landet so bei ~0.80
- * statt oben. Für „exakt wie Elasticsearch" braucht es daher das, was
- * Elasticsearch selbst nutzt: <b>BM25-artige lexikalische Volltextsuche</b>.</p>
- *
- * <p>Diese Klasse bildet das mit Postgres-Bordmitteln nach: ein
- * {@code tsvector} (deutsche Text-Search-Konfiguration) mit GIN-Index, bewertet
- * per {@code ts_rank_cd}. Die Längen-Normalisierung ist bewusst <em>aus</em>
- * (Default-Flag 0), sodass exakte Term-Treffer unabhängig von der Chunk-Länge
- * hoch ranken. Zusätzlich heben ein Phrasen-Treffer
- * ({@code phraseto_tsquery}, aufeinanderfolgende Wörter) und ein exakter
- * Teilstring-Treffer ({@code ILIKE}) die besten Ergebnisse ganz nach oben.</p>
- *
- * <p>Nur unter Profil {@code specs} oder {@code postgres} aktiv – die Volltext-
- * Funktionen ({@code to_tsvector}, {@code websearch_to_tsquery}) sind
- * PostgreSQL-spezifisch und stehen gegen die H2-Default-DB nicht zur Verfügung.</p>
- */
 @Service
 @Profile("specs | postgres")
 public class RagImportStore {
@@ -69,11 +45,7 @@ public class RagImportStore {
         this.importDir = Path.of(importDir).toAbsolutePath();
     }
 
-    /**
-     * Legt Tabelle und Volltext-Index idempotent an. Die Spalte {@code tsv} ist
-     * eine <em>generierte</em> Spalte: Postgres pflegt den Suchvektor automatisch
-     * aus {@code content}, sodass Import-Code sich nicht darum kümmern muss.
-     */
+
     @PostConstruct
     void init() {
         jdbcTemplate.execute("""
@@ -252,11 +224,6 @@ public class RagImportStore {
                 .toList();
     }
 
-    /**
-     * PDFBox (PagePdfDocumentReader) braucht wahlfreien Zugriff – Uploads landen
-     * daher kurz in einer Temp-Datei. Text-Dateien werden direkt aus dem Upload
-     * gelesen.
-     */
     private org.springframework.core.io.Resource toResource(MultipartFile file, String name) {
         try {
             if (name.toLowerCase().endsWith(".pdf")) {

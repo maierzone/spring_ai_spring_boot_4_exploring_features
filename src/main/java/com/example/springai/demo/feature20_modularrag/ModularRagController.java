@@ -16,40 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 20 – Modulare / Advanced RAG ({@link RetrievalAugmentationAdvisor}).
- *
- * <p>Während Feature 7 mit dem {@code QuestionAnswerAdvisor} die <em>einfachste</em>
- * RAG-Variante zeigt (Frage → Ähnlichkeitssuche → Antwort), zerlegt der
- * {@link RetrievalAugmentationAdvisor} denselben Ablauf in eine <b>austauschbare
- * Pipeline</b>. Jeder Schritt ist eine eigene Komponente, die unabhängig
- * konfiguriert oder ersetzt werden kann:</p>
- *
- * <ol>
- *   <li><b>Pre-Retrieval – Query-Transformation:</b> Der
- *       {@link RewriteQueryTransformer} formt eine umgangssprachliche/mehrdeutige
- *       Nutzerfrage in eine fokussierte Suchanfrage um (entfernt Floskeln,
- *       schärft Schlüsselbegriffe) – das verbessert die Trefferqualität spürbar.</li>
- *   <li><b>Pre-Retrieval – Query-Expansion:</b> Der {@link MultiQueryExpander}
- *       erzeugt mehrere Formulierungsvarianten der Frage. So werden auch Dokumente
- *       gefunden, die dasselbe Konzept anders benennen (Synonyme, Umschreibungen).</li>
- *   <li><b>Retrieval:</b> Der {@link VectorStoreDocumentRetriever} sucht die
- *       passendsten Dokumente im {@link VectorStore} (gleicher Speicher wie
- *       Feature 7 – Telematik-/eGK-Wissen).</li>
- *   <li><b>Generation – Augmentation:</b> Der {@link ContextualQueryAugmenter}
- *       fügt die gefundenen Dokumente als Kontext in den finalen Prompt. Mit
- *       {@code allowEmptyContext(true)} antwortet das Modell auch dann sauber,
- *       wenn nichts Passendes gefunden wurde – statt einen Fehler zu werfen.</li>
- * </ol>
- *
- * <p>Beispiel: {@code GET /api/modular-rag?question=Kannst du mir kurz erklaeren,
- * was dieser GESPERRT-Status bei der eGK eigentlich bedeutet?}</p>
- *
- * <p><b>Kosten-Hinweis:</b> Transformation und Expansion sind je ein eigener
- * (kleiner) LLM-Aufruf <em>vor</em> dem eigentlichen Antwort-Aufruf. Das ist der
- * bewusste Trade-off der Advanced-RAG-Pipeline: mehr Aufrufe gegen bessere
- * Retrieval-Qualität.</p>
- */
 @RestController
 public class ModularRagController {
 

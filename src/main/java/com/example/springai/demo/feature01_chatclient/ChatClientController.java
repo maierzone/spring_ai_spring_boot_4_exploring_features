@@ -5,16 +5,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 1 – ChatClient (das Kern-Feature von Spring AI).
- *
- * <p>Der {@link ChatClient} ist die zentrale, "fluent" API, um mit einem
- * Sprachmodell zu sprechen: Prompt zusammenbauen → {@code call()} → Antwort lesen.
- * Er abstrahiert vom konkreten Provider (hier Anthropic), sodass derselbe Code
- * mit OpenAI, Ollama usw. funktionieren würde.</p>
- *
- * <p>Beispiel: {@code GET /api/chat?message=Erklaere Spring AI in einem Satz}</p>
- */
 @RestController
 public class ChatClientController {
 

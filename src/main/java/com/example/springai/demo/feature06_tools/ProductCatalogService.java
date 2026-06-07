@@ -6,14 +6,6 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-/**
- * Beispielhafter Fach-Service (Produktkatalog mit Lagerbeständen).
- *
- * <p>Stellvertretend für "echte" Geschäftslogik – in der Realität läge dahinter
- * eine Datenbank oder ein weiterer Microservice. Wichtig für die Demo: Dieser
- * Service weiß nichts von KI. Er wird in {@link ProductTools} lediglich als Tool
- * für das Modell zugänglich gemacht.</p>
- */
 @Service
 public class ProductCatalogService {
 

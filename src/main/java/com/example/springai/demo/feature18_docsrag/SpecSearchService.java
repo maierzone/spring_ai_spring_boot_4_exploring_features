@@ -15,29 +15,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-/**
- * FEATURE 18 – Hybrid-Suche ueber den Spec-Vektorspeicher.
- *
- * <p>Die reine Vektorsuche trifft bei Fachtext mit vielen Bezeichnern (Feldnamen,
- * OIDs, Fehlercodes, {@code gemSpec_*}, Kapitelnummern) schlecht: Embeddings sind
- * gut in <em>Bedeutung</em>, schwach bei <em>exakten Tokens</em>. Diese Suche
- * kombiniert deshalb zwei Signale und fusioniert sie (Reciprocal Rank Fusion):</p>
- * <ul>
- *   <li><b>lexikalisch</b> – PostgreSQL-Volltext ({@code tsvector}, Konfiguration
- *       {@code german}) plus exakter Teilstring-Treffer ({@code pg_trgm}-beschleunigt);</li>
- *   <li><b>semantisch</b> – Cosine-Naehe im pgvector-Index (gleiches Embedding-Modell
- *       wie bei der Ingestion).</li>
- * </ul>
- *
- * <p>Score-Skala bewusst intuitiv (wie im {@code RagImportStore}): exakter
- * Teilstring ~1.0, Phrasentreffer ~0.9, sonst der fusionierte Rang in 0.5..0.85 –
- * „exakt, sonst am aehnlichsten".</p>
- *
- * <p>Der Volltext-Index wird als <b>zusaetzliche</b> Spalte auf die von Spring AI
- * verwaltete Tabelle {@code spec_vector_store} gelegt (Spring AI ignoriert eigene
- * Zusatzspalten) – ohne Re-Embedding, da {@code tsv} aus {@code content} generiert
- * wird. Nur unter Profil {@code specs} aktiv.</p>
- */
 @Service
 @Profile("specs")
 public class SpecSearchService implements ApplicationRunner {

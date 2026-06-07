@@ -12,21 +12,7 @@ import org.springframework.ai.chat.client.advisor.api.CallAdvisorChain;
 import org.springframework.ai.chat.metadata.ChatResponseMetadata;
 import org.springframework.ai.chat.metadata.Usage;
 
-/**
- * Ein <b>selbst geschriebener</b> Advisor, der die Antwortzeit misst und den
- * Token-Verbrauch protokolliert.
- *
- * <p>Damit wird das eigentliche Erweiterungskonzept von Spring AI greifbar: Ein
- * Advisor implementiert {@link CallAdvisor} und umschließt den restlichen
- * Aufrufketten-Durchlauf. Vor {@code chain.nextCall(...)} kann er die Anfrage
- * inspizieren/verändern, danach die Antwort. Genau so sind auch die eingebauten
- * Advisors (Chat-Memory, RAG, Logging) umgesetzt.</p>
- *
- * <p>Dieser Advisor misst die Latenz des gesamten nachgelagerten Aufrufs, liest –
- * sofern vorhanden – die Token-Nutzung aus den Antwort-Metadaten und legt beide
- * Werte zusätzlich in den Antwort-Kontext, sodass nachgelagerter Code sie
- * auswerten könnte.</p>
- */
+
 public class MetricsLoggingAdvisor implements CallAdvisor {
 
     private static final Logger log = LoggerFactory.getLogger(MetricsLoggingAdvisor.class);

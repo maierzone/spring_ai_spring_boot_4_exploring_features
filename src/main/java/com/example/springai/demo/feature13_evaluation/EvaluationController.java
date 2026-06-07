@@ -11,22 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 13 – Evaluation (LLM-as-a-Judge gegen Halluzinationen).
- *
- * <p>Wie testet man eine nicht-deterministische KI-Antwort? Spring AI liefert dafuer
- * {@code Evaluator}-Implementierungen, die ein (ggf. zweites) Modell als <em>Richter</em>
- * einsetzen. Der {@link RelevancyEvaluator} prueft, ob eine Antwort durch den
- * mitgegebenen Kontext (z.&nbsp;B. die von einem RAG-Schritt gelieferten Dokumente)
- * gedeckt ist – also <em>relevant und gegroundet</em> statt frei halluziniert.</p>
- *
- * <p>Das ist der natuerliche Abschluss einer RAG-Pipeline (Feature 7): Erst Kontext
- * abrufen, dann antworten, dann automatisiert bewerten – und z.&nbsp;B. in der CI als
- * Qualitaets-Gate verwenden.</p>
- *
- * <p>Beispiel:
- * {@code GET /api/evaluate/relevancy?question=Was ist RAG?&context=RAG kombiniert Retrieval mit Generation.&answer=RAG ruft passende Dokumente ab und nutzt sie als Kontext.}</p>
- */
 @RestController
 public class EvaluationController {
 

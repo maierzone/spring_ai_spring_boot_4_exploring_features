@@ -994,10 +994,124 @@ function AdvisorsPanel() {
   );
 }
 
+// --- Tool Calling Expert: OpenAlex Paper-Suche & -Download ------------------
+function PapersPanel() {
+  const [q, setQ] = useState("Finde Paper zum Thema Neurodivergenz bei Tieren");
+  const [res, setRes] = useState(null);         // { antwort, thema, hits, metrics }
+  const [sel, setSel] = useState(() => new Set()); // ausgewaehlte OA-Treffer (ref)
+  const [outcomes, setOutcomes] = useState(null); // Ergebnis des Batch-Downloads
+  const [lib, setLib] = useState([]);             // Bibliothek (gespeicherte Dateien)
+  const [err, setErr] = useState(null);
+  const [busy, run] = useFetch();
+
+  const loadLib = () => fetch("/api/downloads").then(r => r.ok ? r.json() : []).then(setLib).catch(() => {});
+  React.useEffect(() => { loadLib(); }, []);
+
+  const search = () => run(async () => {
+    setErr(null); setRes(null); setOutcomes(null); setSel(new Set());
+    try {
+      const r = await fetch("/api/downloads/chat?message=" + encodeURIComponent(q));
+      const body = await r.json();
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      setRes(body);
+      CostBus.add(body.metrics && body.metrics.costUsd);
+    } catch (e) {
+      setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt? OpenAlex erreichbar?)");
+    }
+  });
+
+  const toggle = (ref) => setSel(prev => {
+    const next = new Set(prev);
+    next.has(ref) ? next.delete(ref) : next.add(ref);
+    return next;
+  });
+
+  const download = () => run(async () => {
+    setErr(null); setOutcomes(null);
+    try {
+      const r = await fetch("/api/downloads/papers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refs: Array.from(sel) }),
+      });
+      const body = await r.json();
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      setOutcomes(body);
+      await loadLib();
+    } catch (e) {
+      setErr(e.message);
+    }
+  });
+
+  const hits = res && res.hits || [];
+
+  return (
+    <Panel icon="science" eyebrow="16_tool_calling_expert — openalex.sh" title="Tool Calling Expert · Paper-Suche & -Download"
+      hint={<>Thema eingeben → das Modell ruft das OpenAlex-Such-Tool, zeigt die Top-5. Open-Access-Treffer anhaken → der Server lädt die legalen PDFs und stellt sie über <span className="inline-code">/api/downloads/&#123;id&#125;/file</span> bereit (Bytes fließen am Modell vorbei).</>}>
+      <label className="field-label">Thema</label>
+      <div className="field"><Icon name="search" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
+      <div className="row"><Button icon="travel_explore" busy={busy} onClick={search}>suchen</Button></div>
+
+      <ConsoleOut text={res && res.antwort} />
+      {res && res.metrics && <MetricsReveal metrics={res.metrics} />}
+
+      {hits.length > 0 && (
+        <div style={{ marginTop: "1rem" }}>
+          {hits.map((h, i) => (
+            <label key={h.ref || i} className={"src" + (h.openAccess ? "" : " disabled")}
+              style={{ display: "flex", gap: ".6rem", alignItems: "flex-start",
+                       opacity: h.openAccess ? 1 : .5, cursor: h.openAccess ? "pointer" : "not-allowed",
+                       animationDelay: (i * .08) + "s" }}>
+              <input type="checkbox" disabled={!h.openAccess}
+                checked={sel.has(h.ref)} onChange={() => toggle(h.ref)} style={{ marginTop: ".25rem" }} />
+              <span>
+                <div className="src-head">
+                  <span className="src-score">{h.openAccess ? "Open Access" : "kein freier Volltext"}</span>
+                  <span className="src-file">{h.year || "—"}{h.authors ? " · " + h.authors : ""}</span>
+                </div>
+                <div className="src-text">{h.title}</div>
+              </span>
+            </label>
+          ))}
+          <div className="row" style={{ marginTop: ".8rem" }}>
+            <Button icon="download" variant="tonal" busy={busy} disabled={sel.size === 0} onClick={download}>
+              {sel.size} ausgewählte herunterladen
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {outcomes && (
+        <ConsoleOut text={outcomes.map(o =>
+          (o.stored ? "✓ " : "✗ ") + o.title + " — " + o.detail).join("\n")} />
+      )}
+
+      {lib.length > 0 && (
+        <div style={{ marginTop: "1.2rem" }}>
+          <label className="field-label">Bibliothek ({lib.length})</label>
+          {lib.map(d => (
+            <div className="src" key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>
+                <div className="src-text">{d.title}</div>
+                <div className="src-head"><span className="src-file">{(d.sizeBytes / 1024 | 0)} KB · {d.sourceRef}</span></div>
+              </span>
+              <a className="btn tonal" href={"/api/downloads/" + d.id + "/file"} target="_blank" rel="noopener">
+                <Icon name="open_in_new" />öffnen
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <ConsoleOut text={err} error />
+    </Panel>
+  );
+}
+
 const PANELS = {
   gateway: GatewayPanel, structured: StructuredPanel, tools: ToolsPanel, rag: RagPanel,
   advisors: AdvisorsPanel,
   db: DbPanel, evaluator: EvaluatorPanel, pgvector: PgVectorPanel, docsrag: DocsRagPanel,
-  moderation: ModerationPanel,
+  moderation: ModerationPanel, papers: PapersPanel,
 };
 Object.assign(window, { PANELS });

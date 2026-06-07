@@ -5,21 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 14 – "Frag deine Datenbank" (natuerlichsprachliche DB-Abfrage).
- *
- * <p>Beantwortet Fragen zum eGK-Datenbestand, indem das Modell die Datenbank die
- * Schwerarbeit machen laesst: Es waehlt bevorzugt ein kuratiertes, geprueftes
- * Aggregations-Tool ({@link EgkQueryTools}); passt keines, formuliert es selbst
- * ein abgesichertes {@code SELECT} ({@link ReadOnlySqlTool}). Postgres zaehlt und
- * gruppiert ueber Indizes – das skaliert auf Millionen Zeilen und liefert exakte
- * Zahlen, waehrend das Modell nur das kleine Ergebnis in eine Antwort giesst.</p>
- *
- * <p>Bewusst <b>keine</b> Vektorsuche/Embeddings: Aggregations-Fragen ("wie viele",
- * "Verteilung") brauchen exakte Zaehlung, kein Aehnlichkeitsraten.</p>
- *
- * <p>Beispiel: {@code GET /api/db/ask?question=Wie viele Versicherte haben E11.9?}</p>
- */
+
 @RestController
 public class DbQueryController {
 

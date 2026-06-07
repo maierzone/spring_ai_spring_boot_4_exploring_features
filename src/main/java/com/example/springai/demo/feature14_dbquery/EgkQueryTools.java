@@ -8,16 +8,6 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-/**
- * FEATURE 14 – kuratierte Datenbank-Werkzeuge fuer den eGK-Datenbestand.
- *
- * <p>Statt das Modell selbst SQL erfinden zu lassen, bekommt es eine Handvoll
- * fester, parametrisierter Aggregations-Abfragen als Tools. Das ist der
- * <b>zuverlaessige</b> Pfad: Postgres erledigt das Zaehlen/Gruppieren ueber
- * Indizes auf Millionen Zeilen, das Modell waehlt nur Tool und Parameter und
- * formuliert das (kleine) Ergebnis aus. Jede Abfrage ist parametrisiert
- * (PreparedStatement) und damit injektionssicher.</p>
- */
 @Component
 public class EgkQueryTools {
 

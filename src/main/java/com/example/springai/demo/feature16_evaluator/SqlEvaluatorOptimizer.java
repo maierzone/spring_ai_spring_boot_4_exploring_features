@@ -3,22 +3,7 @@ package com.example.springai.demo.feature16_evaluator;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Reine, zustandslose Umsetzung des <b>Evaluator-Optimizer</b>-Patterns.
- *
- * <p>Ein Generator erzeugt einen Vorschlag, ein Evaluator bewertet ihn. Ist der
- * Vorschlag nicht gut genug, wird seine Kritik (Feedback) als Kontext in den
- * naechsten Generator-Lauf gegeben – so lange, bis der Evaluator zustimmt oder
- * {@code maxIterations} erreicht ist. Das ist die Schleife, mit der ein KI-System
- * seine eigene Ausgabe so lange verbessert, bis sie einen Qualitaetsmassstab
- * erfuellt – statt blind den ersten Wurf zu uebernehmen.</p>
- *
- * <p>Bewusst frei von Spring-/LLM-Abhaengigkeiten: Generator und Evaluator sind
- * funktionale Schnittstellen. Dadurch laesst sich die <em>Konvergenz-Logik</em>
- * (Abbruch bei Erfolg, Feedback-Weitergabe, harte Iterationsgrenze) vollstaendig
- * offline und deterministisch testen, waehrend der Controller die echten
- * LLM-Aufrufe einsetzt.</p>
- */
+
 public final class SqlEvaluatorOptimizer {
 
     /** Vorgabe-Obergrenze fuer die Verbesserungsschleife (Schutz vor Endlosschleife/Kosten). */

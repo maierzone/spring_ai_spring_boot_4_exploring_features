@@ -11,20 +11,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 11 (Teil B) – MCP-Client: externe MCP-Server anbinden.
- *
- * <p>Der {@code spring-ai-starter-mcp-client} verbindet sich beim Start mit allen
- * unter {@code spring.ai.mcp.client.*} konfigurierten MCP-Servern und stellt deren
- * Tools als {@link McpSyncClient}-Beans bereit. Sind – wie im Standard dieser Demo –
- * <em>keine</em> Server konfiguriert, bleibt der Client inert: Es entstehen keine
- * Verbindungen, die Liste der Clients ist leer. Genau deshalb bleibt das Quality-Gate
- * offline und ohne Netzwerk gruen.</p>
- *
- * <p>Zum Ausprobieren genuegt ein Loopback auf den <em>eigenen</em> MCP-Server dieser
- * App (siehe Handbuch, {@code docs/HANDBUCH.md}): dann tauchen die Tools aus
- * {@link McpInventoryTools} hier als <em>remote</em> Tools auf.</p>
- */
 @RestController
 public class McpClientController {
 

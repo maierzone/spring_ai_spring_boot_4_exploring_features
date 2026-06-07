@@ -13,9 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-/**
- * FEATURE 14 – generischer, rein lesender SQL-Execute-Endpoint.
- */
 @RestController
 public class SqlExecuteController {
 

@@ -5,20 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 8 – Embeddings.
- *
- * <p>Ein Embedding ist die Übersetzung eines Textes in einen Zahlenvektor.
- * Ähnliche Texte liegen im Vektorraum nah beieinander. Embeddings sind die
- * Grundlage für semantische Suche, Clustering und RAG. Dieser Endpunkt macht das
- * Konzept greifbar, indem er die Ähnlichkeit zweier Texte als Zahl ausgibt.</p>
- *
- * <p>In dieser Demo arbeitet das {@link EmbeddingModel} offline
- * ({@code HashingEmbeddingModel}); die API ist identisch zu einem echten
- * Cloud-Embedding-Modell.</p>
- *
- * <p>Beispiel: {@code GET /api/embeddings/similarity?text1=Hund&text2=Katze}</p>
- */
+
 @RestController
 public class EmbeddingController {
 

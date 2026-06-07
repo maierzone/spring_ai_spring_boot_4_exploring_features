@@ -8,17 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 3 – Prompt Templates.
- *
- * <p>Prompts enthalten in der Praxis variable Anteile (Benutzer-Eingaben,
- * Kontext, Parameter). {@link PromptTemplate} trennt die feste "Vorlage" mit
- * Platzhaltern (<code>{name}</code>) sauber von den eingesetzten Werten – das ist
- * lesbarer und weniger fehleranfällig als String-Verkettung und reduziert das
- * Risiko von Prompt-Injection durch unkontrollierte Konkatenation.</p>
- *
- * <p>Beispiel: {@code GET /api/joke?topic=Katzen&language=Englisch}</p>
- */
 @RestController
 public class PromptTemplateController {
 

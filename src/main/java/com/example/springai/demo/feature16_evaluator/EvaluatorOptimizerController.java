@@ -16,28 +16,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 16 – Evaluator-Optimizer (selbstkorrigierende KI).
- *
- * <p>Feature 14 laesst das Modell aus einer Frage SQL erzeugen und reicht es an den
- * {@link SqlGuard} weiter. Doch das Modell rät dabei Spaltennamen, missversteht das
- * Schema oder vergisst eine Bedingung – der erste Wurf ist nicht immer korrekt.
- * Hier schieben wir eine <b>Kritik-Schleife</b> dazwischen: ein zweiter "Richter"-
- * {@code ChatClient} bewertet das erzeugte SQL gegen das Schema; bei Maengeln fliesst
- * seine Begruendung als Feedback in einen neuen Generierungs-Versuch – bis das SQL
- * akzeptiert ist oder die Iterationsgrenze greift.</p>
- *
- * <p>Die Bewertung ist <b>geschichtet</b> und renutzt vorhandene Bausteine:
- * zuerst der billige, deterministische {@link SqlGuard} aus Feature 14 (rein lesend?
- * nur ein Statement?), erst danach – und nur wenn der Guard durchlaesst – der teure
- * LLM-Richter mit {@link Evaluation Structured Output} (Feature 4). So spart der
- * deterministische Vorfilter im Fehlerfall einen Modellaufruf.</p>
- *
- * <p>Zusammenspiel: Feature 13 nutzt einen Evaluator als <em>Mess-Werkzeug am Ende</em>;
- * hier wird Evaluation zum <em>aktiven Regelkreis mitten im Flow</em>.</p>
- *
- * <p>Beispiel: {@code GET /api/evaluator/sql?question=Wie viele Versicherte sind aelter als 65?}</p>
- */
 @RestController
 public class EvaluatorOptimizerController {
 

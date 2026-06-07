@@ -11,9 +11,7 @@ import java.util.Map;
 
 @Component
 public class VersionInfoContributor implements InfoContributor {
-
     private final Environment env;
-
     VersionInfoContributor(Environment env) {
         this.env = env;
     }

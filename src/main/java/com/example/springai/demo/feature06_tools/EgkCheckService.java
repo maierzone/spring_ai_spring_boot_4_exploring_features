@@ -10,20 +10,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-/**
- * Fachlogik fuer eGK-/Telematik-<b>Einzelsatz-Pruefungen</b>.
- *
- * <p>Bewusste Abgrenzung zu Feature 14: dort beantwortet das Modell
- * <em>Aggregations</em>-Fragen ("wie viele", "Verteilung") ueber den gesamten
- * Datenbestand. Hier geht es um <em>einen konkreten Satz</em>: Ist diese Nummer
- * formal gueltig? Welchen Status hat die Karte dieses Versicherten? Was bedeutet
- * dieser ICD-10-Code? Ist dieses Zertifikat heute noch gueltig? Genau die Fragen,
- * die im Entwickleralltag beim Pruefen von Testdaten auftauchen.</p>
- *
- * <p>Die reinen Pruefziffer-Pruefungen nutzen die bereits getestete
- * {@link CheckDigits}-Logik (DRY); die Nachschlage-Funktionen treffen je genau
- * einen Datensatz ueber einen indizierten Schluessel (KVNR, Seriennummer).</p>
- */
+
 @Service
 public class EgkCheckService {
 

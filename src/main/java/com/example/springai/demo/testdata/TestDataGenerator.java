@@ -7,22 +7,6 @@ import java.util.Random;
 
 import org.springframework.stereotype.Component;
 
-/**
- * Deterministischer Generator fuer eine synthetische Telematik-/eGK-Welt.
- *
- * <p>Erzeugt reproduzierbar (fester Seed =&gt; identische Daten) einen kohaerenten,
- * relational verknuepften Datenbestand aus Krankenkassen, Versicherten, eGK-Karten,
- * Leistungserbringern, ICD-10-Diagnosen sowie digitalen Zertifikaten (HBA/SMC-B/eGK)
- * inkl. ausstellender CA.</p>
- *
- * <p><b>DSGVO:</b> Alle Werte sind frei erfunden. Namen stammen aus kleinen
- * Bausteinlisten, Nummern (KVNR/IK/ICCSN) tragen korrekte Pruefziffern, gehoeren
- * aber zu keiner realen Person. Es findet keinerlei echte Kryptografie statt.</p>
- *
- * <p>Die Klasse ist bewusst frei von DB-/Spring-Abhaengigkeiten in der Logik:
- * {@link #generate(int, long)} liefert reine Records und laesst sich daher voll
- * offline (ohne Datenbank) testen.</p>
- */
 @Component
 public class TestDataGenerator {
 

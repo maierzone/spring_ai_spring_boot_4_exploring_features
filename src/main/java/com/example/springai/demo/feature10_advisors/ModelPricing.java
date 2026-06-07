@@ -2,18 +2,7 @@ package com.example.springai.demo.feature10_advisors;
 
 import java.util.Map;
 
-/**
- * FEATURE 10 – Preis-Maptabelle für die Kostenabschätzung der Modellaufrufe.
- *
- * <p>Bildet eine Modell-Id auf den Listenpreis ab (USD pro 1.000.000 Tokens,
- * getrennt nach Input/Prompt- und Output/Completion-Tokens). Der
- * {@link MetricsLoggingAdvisor} liest die tatsächliche Token-Nutzung aus den
- * Antwort-Metadaten und multipliziert sie mit diesem Tarif, um die Kosten eines
- * einzelnen Aufrufs auszuweisen.</p>
- *
- * <p>Bewusst eine kleine, statische Tabelle (kein konfigurierbarer Store): die
- * Preise ändern sich selten und sind hier nachvollziehbar versioniert.</p>
- */
+
 public final class ModelPricing {
 
     /** Listenpreis eines Modells in USD pro 1.000.000 Tokens. */

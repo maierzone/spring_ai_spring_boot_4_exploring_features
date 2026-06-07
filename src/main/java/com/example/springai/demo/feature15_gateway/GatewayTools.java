@@ -17,19 +17,6 @@ import com.example.springai.demo.feature13_evaluation.EvaluationController;
 import com.example.springai.demo.feature13_evaluation.EvaluationController.EvaluationResult;
 import com.example.springai.demo.feature14_dbquery.DbQueryController;
 
-/**
- * FEATURE 15 – Werkzeugkasten des Gate-Deciders ("Parent Layer").
- *
- * <p>Jedes natuerlichsprachliche GET-Feature der Anwendung ist hier als ein
- * {@link Tool} hinterlegt, das an die <b>bestehende</b> Controller-Bean delegiert
- * (DRY – keine duplizierte Logik). Das Gate-LLM ({@link GatewayController}) waehlt
- * anhand der Anfrage genau eines dieser Tools; die eigentliche Arbeit erledigt
- * weiterhin der jeweilige Feature-Controller.</p>
- *
- * <p>Jedes Tool meldet seine Wahl ueber den {@link RouteRecorder}, damit der
- * Controller die getroffene Route und die roh durchgereichte Antwort zurueckgeben
- * kann – statt der freien Schlussformulierung des Modells.</p>
- */
 @Component
 public class GatewayTools {
 

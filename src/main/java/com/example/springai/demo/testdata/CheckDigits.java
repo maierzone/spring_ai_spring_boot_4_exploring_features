@@ -1,13 +1,6 @@
 package com.example.springai.demo.testdata;
 
-/**
- * Pruefziffer-Algorithmen fuer fachlich plausible (aber synthetische) Nummern.
- *
- * <p>Macht die generierten Testdaten realistischer: Eine KVNR oder ein
- * Institutionskennzeichen besteht nicht aus Zufall, sondern traegt eine
- * Pruefziffer, die hier korrekt berechnet wird. Damit lassen sich die Daten
- * gegen echte Validierungslogik testen, ohne reale Personendaten zu verwenden.</p>
- */
+
 public final class CheckDigits {
 
     private CheckDigits() {

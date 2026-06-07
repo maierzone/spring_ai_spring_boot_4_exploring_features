@@ -16,27 +16,7 @@ import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
 
-/**
- * FEATURE 19 – Moderation als Guardrail-Advisor (Claude-as-Classifier).
- *
- * <p>Dieser <b>selbst geschriebene</b> Advisor klinkt sich – wie der
- * {@code MetricsLoggingAdvisor} aus Feature 10 – in die Aufrufkette ein und schuetzt
- * den Modellaufruf <em>in beide Richtungen</em>:</p>
- * <ol>
- *   <li><b>Input-Guardrail:</b> Die Nutzereingabe wird <em>vor</em> dem eigentlichen
- *       Modellaufruf geprueft. Bei einem Treffer wird die Kette gar nicht erst
- *       ausgefuehrt ({@code chain.nextCall} entfaellt) und eine Hinweis-Antwort
- *       zurueckgegeben.</li>
- *   <li><b>Output-Guardrail:</b> Die Modellantwort wird <em>nach</em> der Generierung
- *       geprueft und bei einem Treffer durch einen neutralen Hinweis ersetzt.</li>
- * </ol>
- *
- * <p>Gegenueber dem stichwortbasierten {@code SafeGuardAdvisor} (Feature 10) ist die
- * Pruefung hier <em>semantisch</em>: Sie delegiert an einen {@link ContentModerator},
- * der in der Anwendung von Claude selbst gestellt wird ({@link ClaudeContentModerator}).
- * In Tests wird stattdessen ein deterministisches Lambda eingesetzt – offline und
- * ohne API-Key.</p>
- */
+
 public class ModerationGuardrailAdvisor implements CallAdvisor {
 
     private static final Logger log = LoggerFactory.getLogger(ModerationGuardrailAdvisor.class);

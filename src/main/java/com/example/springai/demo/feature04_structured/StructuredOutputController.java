@@ -14,19 +14,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-/**
- * FEATURE 4 – Structured Output (typisierte Antworten).
- *
- * <p>LLMs liefern standardmäßig Freitext. Oft braucht man aber ein strukturiertes
- * Java-Objekt. Spring AI kann das Modell anweisen, JSON in einem bestimmten Schema
- * zu liefern, und das Ergebnis automatisch in einen Java-Typ deserialisieren –
- * über {@code .entity(...)}. Damit wird aus "KI-Text" ein sauber typisierter
- * Rückgabewert, den der Rest der Anwendung weiterverarbeiten kann.</p>
- *
- * <p>Beispiel: {@code GET /api/recipe?dish=Pfannkuchen} liefert JSON im Schema
- * des {@link Recipe}-Records.</p>
- */
 @RestController
 public class StructuredOutputController {
 

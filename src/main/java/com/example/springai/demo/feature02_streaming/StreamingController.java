@@ -8,17 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Flux;
 
-/**
- * FEATURE 2 – Streaming-Antworten.
- *
- * <p>Statt auf die komplette Antwort zu warten ({@code call()}), liefert
- * {@code stream()} die Tokens des Modells als reaktiven {@link Flux} – Stück für
- * Stück, so wie sie generiert werden. Das ist die Grundlage für den typischen
- * "Schreibmaschinen-Effekt" in Chat-Oberflächen.</p>
- *
- * <p>Wir geben den Stream als Server-Sent-Events (SSE) aus:
- * {@code GET /api/stream?message=Zaehle von 1 bis 10}</p>
- */
 @RestController
 public class StreamingController {
 

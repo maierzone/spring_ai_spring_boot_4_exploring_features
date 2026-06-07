@@ -11,21 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 18 – REST-Steuerung der docs_rag-Pipeline für die UI.
- *
- * <ul>
- *   <li>{@code GET  /api/docs-rag/stats} – die 4 Zähler + Laufzustand (Polling).</li>
- *   <li>{@code POST /api/docs-rag/seed}  – Katalog aus der Sitemap nachladen.</li>
- *   <li>{@code POST /api/docs-rag/start?batch=N} – Dauerlauf starten (N=1/5/10).</li>
- *   <li>{@code POST /api/docs-rag/stop}  – Dauerlauf pausieren.</li>
- *   <li>{@code GET  /api/docs-rag/search?question=…&topK=N} – Hybrid-Suche
- *       (lexikalisch exakt + semantisch) ueber die ingestierten Spec-Chunks,
- *       ohne LLM.</li>
- * </ul>
- *
- * <p>Nur unter Profil {@code specs} aktiv (Pipeline braucht pgvector + Embedding).</p>
- */
+
 @RestController
 @RequestMapping("/api/docs-rag")
 @Profile("specs")

@@ -11,31 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 17 – pgvector als persistenter VectorStore.
- *
- * <p>Während Feature 7 (RAG) und Feature 8 (Embeddings) den Vektorspeicher nur
- * als Black Box nutzen, macht dieses Feature den Wechsel vom flüchtigen
- * {@code SimpleVectorStore} auf einen <b>persistenten</b> {@code PgVectorStore}
- * sichtbar. Beide implementieren dasselbe {@link VectorStore}-Interface – der
- * Anwendungscode hier bleibt identisch, getauscht wird allein die Bean (siehe
- * {@code DemoBeans} und das Profil {@code pgvector}).</p>
- *
- * <p>Die beiden Stärken, die pgvector gegenüber dem In-Memory-Speicher ausspielt,
- * werden hier vorgeführt:</p>
- * <ul>
- *   <li><b>Persistenz:</b> Über {@code POST /api/pgvector/documents} abgelegte
- *       Dokumente landen in der Postgres-Tabelle {@code vector_store} und
- *       <em>überleben einen Neustart</em> der Anwendung.</li>
- *   <li><b>Metadaten-Filter:</b> Die Ähnlichkeitssuche lässt sich mit einem
- *       Filter-Ausdruck auf Metadaten kombinieren (hier: {@code category}). Das
- *       Filtern übernimmt bei pgvector die Datenbank.</li>
- * </ul>
- *
- * <p>Hinweis: In den Tests ({@code @ActiveProfiles("test")}) ist statt pgvector
- * der {@code SimpleVectorStore} aktiv. Auch er beherrscht Metadaten-Filter, sodass
- * die Logik dieses Controllers offline testbar bleibt.</p>
- */
+
 @RestController
 public class PgVectorController {
 

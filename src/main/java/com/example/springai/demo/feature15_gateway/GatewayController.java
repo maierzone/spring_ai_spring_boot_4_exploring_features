@@ -11,21 +11,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.springai.demo.feature10_advisors.ModelPricing;
 
-/**
- * FEATURE 15 – Gate-Decider ("Parent Layer" ueber allen Feature-Controllern).
- *
- * <p>Ein einziger Eingang fuer beliebige natuerlichsprachliche Anfragen: Ein
- * KI-Router entscheidet, welches der bestehenden Features zustaendig ist, und
- * delegiert per Spring-AI-Tool-Calling an dessen Controller-Methode
- * ({@link GatewayTools}). Zurueck kommt die getroffene Route plus die roh
- * durchgereichte Antwort des gewaehlten Features – nicht die Neuformulierung des
- * Modells (siehe {@link RouteRecorder}).</p>
- *
- * <p>Passt fachlich kein Feature, wird die Anfrage <b>explizit abgelehnt</b>
- * (Route {@code none}), statt zu raten.</p>
- *
- * <p>Beispiel: {@code GET /api/gateway?question=Wie viele Versicherte haben E11.9?}</p>
- */
 @RestController
 public class GatewayController {
 

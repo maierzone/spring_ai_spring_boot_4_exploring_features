@@ -96,6 +96,7 @@ const FEATURES = [
   { id: "gateway",    icon: "hub",            name: "Gate-Decider",      endpoint: "/api/gateway" },
   { id: "structured", icon: "account_tree",   name: "Structured Output", endpoint: "/api/tickets/analyze" },
   { id: "tools",      icon: "construction",   name: "Tool Calling",      endpoint: "/api/tools" },
+  { id: "papers",     icon: "science",        name: "Tool Calling Expert", endpoint: "/api/downloads" },
   { id: "rag",        icon: "manage_search",  name: "RAG",               endpoint: "/api/rag" },
   { id: "advisors",   icon: "tune",           name: "Advisors",          endpoint: "/api/advisors" },
   { id: "db",         icon: "database",       name: "DB-Abfrage",        endpoint: "/api/db/ask" },
@@ -107,7 +108,7 @@ const FEATURES = [
 
 // Gruppierung der Nav-Items in drei einklappbare Themenblöcke.
 const NAV_GROUPS = [
-  { label: "Agentic Patterns",            icon: "smart_toy",     ids: ["gateway", "tools", "evaluator"] },
+  { label: "Agentic Patterns",            icon: "smart_toy",     ids: ["gateway", "tools", "evaluator", "papers"] },
   { label: "Retrieval & Daten (pgvector)", icon: "database",      ids: ["rag", "docsrag", "db", "pgvector"] },
   { label: "LLM-Bausteine",               icon: "deployed_code", ids: ["structured", "moderation", "advisors"] },
 ];

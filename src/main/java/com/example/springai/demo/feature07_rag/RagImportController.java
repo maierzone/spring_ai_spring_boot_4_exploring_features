@@ -13,19 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- * FEATURE 7 – REST-Pfad für den <b>lexikalischen</b> Import-Speicher
- * ({@link RagImportStore}). Bedient das „Eigene Dokumente importieren"-Panel der
- * UI (panels.jsx, {@code /api/rag/import/*}).
- *
- * <p>Anders als {@code /api/rag/sources} (Embedding-/Vektorsuche) sucht dieser
- * Pfad rein lexikalisch (Postgres-Volltext, BM25-artig). Damit ranken exakte
- * Stichwort-/Phrasen-Treffer zuverlässig oben – das Verhalten, das man von
- * Elasticsearch kennt.</p>
- *
- * <p>Nur unter Profil {@code specs} oder {@code postgres} aktiv (PostgreSQL-
- * Volltextfunktionen erforderlich).</p>
- */
+
 @RestController
 @RequestMapping("/api/rag/import")
 @Profile("specs | postgres")

@@ -12,13 +12,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
-/**
- * FEATURE 18 – verarbeitet ein einzelnes Spec-PDF in den {@link VectorStore}.
- *
- * <p>Kapselt den eigentlichen Ingestion-Schritt (PDF → Seiten → Chunks →
- * Embedding → pgvector) als wiederverwendbaren Baustein, den der
- * {@link DocsRagWorker} pro heruntergeladenem Dokument aufruft.</p>
- */
+
 @Component
 @Profile("specs")
 public class SpecPdfProcessor {

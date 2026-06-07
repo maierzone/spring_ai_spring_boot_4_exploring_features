@@ -11,15 +11,6 @@ import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
-/**
- * FEATURE 14 – abgesicherter Text-to-SQL-Fallback.
- *
- * <p>Greift, wenn keines der kuratierten {@link EgkQueryTools} zur Frage passt:
- * Das Modell formuliert dann selbst ein {@code SELECT}, das hier <b>nur lesend</b>
- * ausgefuehrt wird. {@link SqlGuard} stellt sicher, dass es sich um eine einzelne
- * Lese-Abfrage handelt; ein eigener {@link JdbcTemplate} mit Query-Timeout
- * verhindert, dass eine teure Abfrage die Datenbank blockiert.</p>
- */
 @Component
 public class ReadOnlySqlTool {
 

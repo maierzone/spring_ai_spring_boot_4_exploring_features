@@ -11,24 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 10 – Advisors (Interzeptoren für die KI-Anfrage).
- *
- * <p>Advisors sind das Erweiterungskonzept von Spring AI: kleine, kombinierbare
- * Bausteine, die sich in den Anfrage-/Antwort-Fluss einklinken – vergleichbar mit
- * Servlet-Filtern. Die zuvor gezeigten Chat-Memory- und RAG-Features sind selbst
- * als Advisors umgesetzt. Hier kombinieren wir zwei eingebaute Advisors:</p>
- * <ul>
- *   <li>{@link MetricsLoggingAdvisor}: <b>selbst geschrieben</b> – misst Latenz
- *       und Token-Verbrauch (zeigt, wie man das Erweiterungskonzept nutzt).</li>
- *   <li>{@link SimpleLoggerAdvisor}: protokolliert Anfrage und Antwort (Debugging).</li>
- *   <li>{@link SafeGuardAdvisor}: blockt Anfragen mit unerwünschten Begriffen ab,
- *       bevor sie überhaupt ans Modell gehen (einfacher Guardrail).</li>
- * </ul>
- *
- * <p>Beispiel: {@code GET /api/advisors?message=Hallo} – enthält die Nachricht
- * einen gesperrten Begriff, antwortet der SafeGuardAdvisor mit einem Hinweis.</p>
- */
+
 @RestController
 public class AdvisorController {
 

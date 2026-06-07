@@ -10,17 +10,6 @@ import org.springframework.ai.document.Document;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 
-/**
- * Liest eine Wissens-Datei aus dem Classpath und zerlegt sie in einzelne
- * {@link Document}s – jeweils ein Absatz (durch Leerzeile getrennt) wird zu einem
- * Dokument.
- *
- * <p>Das ist eine bewusst einfache Variante des "Document Ingestion"-Schritts, der
- * jedem RAG-System vorausgeht. In echten Projekten übernehmen das spezialisierte
- * Reader (PDF, HTML, ...) und TextSplitter aus Spring AI; das Prinzip – Quelle
- * laden, in sinnvolle Häppchen schneiden, in den Vektorspeicher legen – bleibt
- * identisch.</p>
- */
 public final class KnowledgeLoader {
 
     private KnowledgeLoader() {

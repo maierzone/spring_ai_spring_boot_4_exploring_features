@@ -15,20 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
-/**
- * FEATURE 18 – Hintergrund-Worker der Spec-Ingestion-Pipeline.
- *
- * <p>Ein {@link Scheduled}-Tick zieht – solange der Worker "läuft" – pro Durchlauf
- * bis zu {@code batchSize} (1/5/10) Dokumente mit {@code status='incoming'} aus
- * {@code docs_rag}, lädt das PDF live von gemspec herunter, verarbeitet es über den
- * {@link SpecPdfProcessor} in den Vektorspeicher und setzt den Status auf
- * {@code processed} bzw. – bei Download-/Parse-Fehlern (z.&nbsp;B. 404) – auf
- * {@code error}. Ist keine {@code incoming}-Zeile mehr da, pausiert der Worker
- * selbsttätig.</p>
- *
- * <p>Start/Stop und Batchgröße steuert der {@link DocsRagController} (UI-Button +
- * Dropdown). Nur unter Profil {@code specs} aktiv.</p>
- */
+
 @Component
 @Profile("specs")
 public class DocsRagWorker {

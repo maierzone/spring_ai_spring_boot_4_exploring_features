@@ -9,22 +9,6 @@ import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.stereotype.Component;
 
-/**
- * FEATURE 15 – Laufzeit-Tracer fuer den Methoden-Aufruf-Flow des Gate-Deciders.
- *
- * <p>Ein {@code @Around}-Aspekt ueber allen Methoden unter
- * {@code com.example.springai.demo.*}: Solange der {@link CallFlowRecorder} auf dem
- * aktuellen Thread aufzeichnet (also waehrend einer {@code /api/gateway}-Anfrage),
- * meldet jeder Aufruf seinen Ein- und Austritt. So entsteht <b>derselbe</b>
- * Aufrufpfad, den man auch beim Schritt-fuer-Schritt-Debugging sehen wuerde – nur
- * automatisch als Baum eingesammelt statt von Hand durchgeklickt.</p>
- *
- * <p><b>Grenze (bewusst):</b> Spring-AOP wirkt nur auf Bean-zu-Bean-Aufrufe ueber den
- * Proxy. Objekt-interne {@code this.helfer()}-Aufrufe und reine Static-Util-Klassen
- * (z.&nbsp;B. {@code SqlGuard}) erscheinen daher nicht – genau wie ein an Methoden-
- * Breakpoints haengender Debugger ueberspringt der Tracer keine Frames, sieht aber
- * nur die Aufrufe, die tatsaechlich ueber eine Bean-Grenze laufen.</p>
- */
 @Aspect
 @Component
 public class CallFlowAspect {

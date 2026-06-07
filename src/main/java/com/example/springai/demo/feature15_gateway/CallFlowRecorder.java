@@ -6,20 +6,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-/**
- * FEATURE 15 – Aufzeichnung des echten Methoden-Aufruf-Flows des Gate-Deciders.
- *
- * <p>Waehrend einer {@code /api/gateway}-Anfrage schneidet der {@link CallFlowAspect}
- * die tatsaechlich durchlaufenen Methodenaufrufe mit und baut hier einen Aufruf-Baum
- * auf – denselben Weg, den man auch im Debugger durchschreiten wuerde, nur als Daten
- * statt als Breakpoints. Der {@link GatewayController} startet die Aufzeichnung vor dem
- * Modellaufruf und liest den Baum danach aus.</p>
- *
- * <p>Bewusst <b>thread-lokal</b> statt {@code @RequestScope}: Tool-Calling laeuft
- * synchron auf demselben Anfrage-Thread, und Hintergrund-Threads (z.&nbsp;B. der
- * Docs-RAG-Worker aus Feature 18) sehen so schlicht keine aktive Aufzeichnung –
- * ohne an einem fehlenden Request-Scope zu scheitern.</p>
- */
 @Component
 public class CallFlowRecorder {
 

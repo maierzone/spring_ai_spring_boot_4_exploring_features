@@ -12,29 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 12 – Observability (Micrometer-Metriken &amp; Tracing).
- *
- * <p>Sobald {@code spring-boot-starter-actuator} (und damit Micrometer) auf dem
- * Klassenpfad liegt, instrumentiert Spring AI seine Aufrufe automatisch:</p>
- * <ul>
- *   <li><b>Metriken</b> wie {@code gen_ai.client.token.usage} (Input-/Output-/Gesamt-
- *       Tokens) und {@code gen_ai.client.operation} (Latenz-Timer) – pro Modell und
- *       Operation getaggt.</li>
- *   <li><b>Observations/Tracing</b> {@code spring.ai.chat.client} um jeden
- *       {@code call()}/{@code stream()} (inkl. verwendeter Advisors, Tool-Namen,
- *       Conversation-ID).</li>
- * </ul>
- *
- * <p>Der eigentliche Mehrwert: dieselben Token-/Latenz-Zahlen, die der
- * selbstgebaute {@code MetricsLoggingAdvisor} (Feature 10) nur ins Log schreibt,
- * landen hier <em>standardisiert</em> in der Metrik-Registry und sind unter
- * {@code /actuator/metrics} sowie via Prometheus/Grafana auswertbar.</p>
- *
- * <p>Beispiele:
- * {@code GET /api/observability/ask?message=...} (loest einen Modellaufruf aus) und
- * {@code GET /api/observability/metrics} (zeigt die bereits erfassten gen_ai-Metriken).</p>
- */
+
 @RestController
 public class ObservabilityController {
 

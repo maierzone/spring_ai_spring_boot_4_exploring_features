@@ -12,16 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
-/**
- * FEATURE 18 – seedet die Tabelle {@code docs_rag} aus dem gemspec-Katalog.
- *
- * <p>Lädt die {@code sitemap.xml}, leitet via {@link SpecCatalog} die Spec-PDFs ab
- * und legt jede noch unbekannte (spec, version) als {@code status='incoming'} an.
- * Bestehende Zeilen bleiben unangetastet – das Seeden ist damit idempotent und
- * kann jederzeit erneut laufen, ohne {@code processed}/{@code error} zu verlieren.</p>
- *
- * <p>Nur unter dem Profil {@code specs} aktiv (braucht die pgvector-/Spec-Umgebung).</p>
- */
+
 @Service
 @Profile("specs")
 public class CatalogService {

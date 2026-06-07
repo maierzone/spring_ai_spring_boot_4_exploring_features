@@ -11,20 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- * FEATURE 7 – RAG (Retrieval Augmented Generation).
- *
- * <p>Damit das Modell über eigenes, nicht antrainiertes Wissen antworten kann,
- * sucht der {@link QuestionAnswerAdvisor} zunächst die zur Frage passendsten
- * Dokumente im {@link VectorStore} (Ähnlichkeitssuche über Embeddings) und hängt
- * sie als Kontext an den Prompt. Das Modell antwortet dann auf Basis dieses
- * abgerufenen Wissens – das reduziert Halluzinationen und hält Antworten aktuell.</p>
- *
- * <p>Der Vektorspeicher wird in {@code DemoBeans} mit Telematik-/eGK-Fachbegriffen
- * vorbefüllt (KVNR, eGK-Status, Zertifikatstypen, ICD-10 …) – passend zum
- * Datenbestand der Features 14–17. Beispiel:
- * {@code GET /api/rag?question=Was bedeutet der eGK-Status GESPERRT?}</p>
- */
+
 @RestController
 public class RagController {
 
