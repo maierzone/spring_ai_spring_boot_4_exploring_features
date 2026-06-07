@@ -95,9 +95,21 @@ public class DownloadController {
                 .map(b -> ResponseEntity.ok()
                         .contentType(MediaType.parseMediaType(b.contentType()))
                         .header(HttpHeaders.CONTENT_DISPOSITION,
-                                "inline; filename=\"" + safeFilename(b.title()) + ".pdf\"")
+                                "inline; filename=\"" + safeFilename(b.title()) + extensionFor(b.contentType()) + "\"")
                         .body(b.data()))
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    /** Passende Dateiendung zum Content-Type (Default {@code .pdf} fuer Paper-Downloads). */
+    private static String extensionFor(String contentType) {
+        if (contentType == null) {
+            return ".pdf";
+        }
+        return switch (contentType) {
+            case "application/epub+zip" -> ".epub";
+            case "text/plain" -> ".txt";
+            default -> ".pdf";
+        };
     }
 
     private static String safeFilename(String title) {

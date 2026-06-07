@@ -1108,10 +1108,125 @@ function PapersPanel() {
   );
 }
 
+// --- eBook-Download: gemeinfreie Buecher (Gutenberg + Open Library) ---------
+function EbooksPanel() {
+  const [q, setQ] = useState("Finde das Buch Faust von Goethe");
+  const [res, setRes] = useState(null);         // { antwort, titel, hits, metrics }
+  const [sel, setSel] = useState(() => new Set()); // ausgewaehlte Treffer (ref)
+  const [outcomes, setOutcomes] = useState(null); // Ergebnis des Batch-Downloads
+  const [lib, setLib] = useState([]);             // Bibliothek (nur eBooks)
+  const [err, setErr] = useState(null);
+  const [busy, run] = useFetch();
+
+  const loadLib = () => fetch("/api/downloads").then(r => r.ok ? r.json() : [])
+    .then(all => setLib(all.filter(d => d.sourceType === "EBOOK"))).catch(() => {});
+  React.useEffect(() => { loadLib(); }, []);
+
+  const search = () => run(async () => {
+    setErr(null); setRes(null); setOutcomes(null); setSel(new Set());
+    try {
+      const r = await fetch("/api/ebooks/chat?message=" + encodeURIComponent(q));
+      const body = await r.json();
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      setRes(body);
+      CostBus.add(body.metrics && body.metrics.costUsd);
+    } catch (e) {
+      setErr(e.message + "\n(Ist ANTHROPIC_API_KEY gesetzt? Gutendex/Open Library erreichbar?)");
+    }
+  });
+
+  const toggle = (ref) => setSel(prev => {
+    const next = new Set(prev);
+    next.has(ref) ? next.delete(ref) : next.add(ref);
+    return next;
+  });
+
+  const download = () => run(async () => {
+    setErr(null); setOutcomes(null);
+    try {
+      const r = await fetch("/api/ebooks/download", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refs: Array.from(sel) }),
+      });
+      const body = await r.json();
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      setOutcomes(body);
+      await loadLib();
+    } catch (e) {
+      setErr(e.message);
+    }
+  });
+
+  const hits = res && res.hits || [];
+
+  return (
+    <Panel icon="menu_book" eyebrow="17_ebooks — gutendex.sh" title="eBook-Download · Gemeinfreie Bücher"
+      hint={<>Titel/Autor eingeben → das Modell ruft das eBook-Such-Tool (Project Gutenberg + Open Library), zeigt die Treffer. Herunterladbare Treffer anhaken → der Server lädt das beste Format (PDF/EPUB/TXT) und stellt es über <span className="inline-code">/api/downloads/&#123;id&#125;/file</span> bereit. Nur gemeinfreie Werke – kein Pippi, aber Goethe &amp; Sherlock Holmes.</>}>
+      <label className="field-label">Titel / Autor</label>
+      <div className="field"><Icon name="search" /><input value={q} onChange={e => setQ(e.target.value)} /></div>
+      <div className="row"><Button icon="travel_explore" busy={busy} onClick={search}>suchen</Button></div>
+
+      <ConsoleOut text={res && res.antwort} />
+      {res && res.metrics && <MetricsReveal metrics={res.metrics} />}
+
+      {hits.length > 0 && (
+        <div style={{ marginTop: "1rem" }}>
+          {hits.map((h, i) => (
+            <label key={h.ref || i} className={"src" + (h.downloadable ? "" : " disabled")}
+              style={{ display: "flex", gap: ".6rem", alignItems: "flex-start",
+                       opacity: h.downloadable ? 1 : .5, cursor: h.downloadable ? "pointer" : "not-allowed",
+                       animationDelay: (i * .08) + "s" }}>
+              <input type="checkbox" disabled={!h.downloadable}
+                checked={sel.has(h.ref)} onChange={() => toggle(h.ref)} style={{ marginTop: ".25rem" }} />
+              <span>
+                <div className="src-head">
+                  <span className="src-score">{h.downloadable ? h.format : "kein freier Download"}</span>
+                  <span className="src-file">{h.year || "—"}{h.authors ? " · " + h.authors : ""}</span>
+                </div>
+                <div className="src-text">{h.title}</div>
+              </span>
+            </label>
+          ))}
+          <div className="row" style={{ marginTop: ".8rem" }}>
+            <Button icon="download" variant="tonal" busy={busy} disabled={sel.size === 0} onClick={download}>
+              {sel.size} ausgewählte herunterladen
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {outcomes && (
+        <ConsoleOut text={outcomes.map(o =>
+          (o.stored ? "✓ " : "✗ ") + o.title + " — " + o.detail).join("\n")} />
+      )}
+
+      {lib.length > 0 && (
+        <div style={{ marginTop: "1.2rem" }}>
+          <label className="field-label">Bibliothek ({lib.length})</label>
+          {lib.map(d => (
+            <div className="src" key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span>
+                <div className="src-text">{d.title}</div>
+                <div className="src-head"><span className="src-file">{(d.sizeBytes / 1024 | 0)} KB · {d.sourceRef}</span></div>
+              </span>
+              <a className="btn tonal" href={"/api/downloads/" + d.id + "/file"} target="_blank" rel="noopener">
+                <Icon name="open_in_new" />öffnen
+              </a>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <ConsoleOut text={err} error />
+    </Panel>
+  );
+}
+
 const PANELS = {
   gateway: GatewayPanel, structured: StructuredPanel, tools: ToolsPanel, rag: RagPanel,
   advisors: AdvisorsPanel,
   db: DbPanel, evaluator: EvaluatorPanel, pgvector: PgVectorPanel, docsrag: DocsRagPanel,
-  moderation: ModerationPanel, papers: PapersPanel,
+  moderation: ModerationPanel, papers: PapersPanel, ebooks: EbooksPanel,
 };
 Object.assign(window, { PANELS });
