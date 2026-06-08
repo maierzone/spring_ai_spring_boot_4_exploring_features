@@ -60,7 +60,7 @@ Eine **Spring-idiomatische Abstraktion** über LLM-Provider — kein Bruch mit d
 
 - 🧩 **Provider-agnostisch** — derselbe Code für Anthropic, OpenAI, Ollama …
 - ⚙️ **Auto-Configuration** — Starter rein, `ChatClient.Builder` wird injiziert
-- 🧠 **Bausteine** — Prompt Templates, Structured Output, Tools, RAG, Memory, Advisors
+- 🧠 **Bausteine** — Prompt Templates, Structured Output, Tools, Memory, Advisors
 - 🍃 **Spring durch & durch** — Beans, DI, `@RestController`, Tests, CI
 
 ::right::
@@ -103,7 +103,6 @@ flowchart LR
   REQ["HTTP / Service"] --> CC["ChatClient<br/>(fluent API)"]
   CC --> ADV["Advisor-Kette"]
   ADV -->|Verlauf laden| MEM[("Chat Memory<br/>JDBC / PostgreSQL")]
-  ADV -->|Kontext anhängen| VS[("VectorStore<br/>RAG")]
   ADV --> MODEL["ChatModel<br/>Anthropic Claude"]
   MODEL -.->|ruft auf| TOOLS["@Tool<br/>Java-Methoden"]
   TOOLS -.->|Ergebnis| MODEL
@@ -112,7 +111,7 @@ flowchart LR
 
 <div class="mt-2 text-xs opacity-70 grid grid-cols-2 gap-x-8">
 <div>📦 Ein Feature = ein Package: <code>com.example.springai.demo.featureNN_*</code></div>
-<div>🔗 Heutiger Fokus: ChatClient · Prompt Templates · Structured Output · Tools · RAG · Memory</div>
+<div>🔗 Heutiger Fokus: ChatClient · Prompt Templates · Structured Output · Tools · Memory · Agentic Patterns</div>
 </div>
 
 ---
@@ -279,46 +278,7 @@ layout: two-cols-header
 layoutClass: gap-8
 ---
 
-# 5 · RAG — Antworten auf eigenem Wissen
-
-::left::
-
-Der `QuestionAnswerAdvisor` sucht passende Dokumente im **VectorStore** und hängt sie als Kontext an den Prompt.
-
-- Ähnlichkeitssuche über **Embeddings** (Kosinus)
-- Reduziert **Halluzinationen**, hält Wissen aktuell
-- Als **Default-Advisor** → jede Anfrage wird angereichert
-- `/api/rag/sources` zeigt den Kontext (ohne LLM-Call)
-
-<div class="mt-4 text-xs opacity-70">
-📁 <code>feature07_rag/RagController.java</code> · <code>config/DemoBeans.java</code><br/>
-🔗 <code>GET /api/rag?question=…</code> · <code>GET /api/rag/sources</code>
-</div>
-
-::right::
-
-```java {3-5}
-public RagController(ChatClient.Builder builder,
-                     VectorStore vectorStore) {
-  this.chatClient = builder
-      .defaultAdvisors(
-          QuestionAnswerAdvisor.builder(vectorStore).build())
-      .build();
-}
-```
-
-```java {2-3}
-// Vorbefüllen in DemoBeans:
-SimpleVectorStore.builder(embeddingModel).build()
-    .add(KnowledgeLoader.loadParagraphs(faq));
-```
-
----
-layout: two-cols-header
-layoutClass: gap-8
----
-
-# 6 · Chat Memory — Gespräch mit Gedächtnis
+# 5 · Chat Memory — Gespräch mit Gedächtnis
 
 ::left::
 
@@ -357,50 +317,14 @@ layout: two-cols-header
 layoutClass: gap-8
 ---
 
-# 7 · pgvector — persistenter VectorStore
-
-::left::
-
-Derselbe `VectorStore` wie in RAG — aber in **PostgreSQL** statt im RAM. Nur die Bean wechselt, der Code bleibt.
-
-- `SimpleVectorStore` → `PgVectorStore` per **Profil** `pgvector`
-- Embeddings **überleben einen Neustart** (Tabelle `vector_store`)
-- **Metadaten-Filter** in der Suche — DB-seitig ausgewertet
-- Tests bleiben offline auf **H2** (`@ActiveProfiles("test")`)
-
-<div class="mt-4 text-xs opacity-70">
-📁 <code>feature17_pgvector/PgVectorController.java</code> · <code>config/DemoBeans.java</code><br/>
-🔗 <code>POST /api/pgvector/documents</code> · <code>GET /api/pgvector/search?query=…&category=…</code>
-</div>
-
-::right::
-
-```java {2}
-@Bean
-@Profile("!pgvector")        // weicht zur Laufzeit dem PgVectorStore
-VectorStore vectorStore(EmbeddingModel m) { … }
-```
-
-```java {4}
-vectorStore.similaritySearch(
-    SearchRequest.builder().query(q).topK(3)
-        // DB-seitiger Metadaten-Filter:
-        .filterExpression("category == 'spring'").build());
-```
-
----
-layout: two-cols-header
-layoutClass: gap-8
----
-
 # Querschnitt: Advisors — der Erweiterungspunkt
 
 ::left::
 
-Memory und RAG sind **selbst Advisors**. Die Kette umschließt jeden Call — ideal für Querschnittsbelange.
+Memory ist **selbst ein Advisor**. Die Kette umschließt jeden Call — ideal für Querschnittsbelange.
 
 - **Interceptor-Muster** um Request/Response
-- Eingebaut: `QuestionAnswerAdvisor`, `MessageChatMemoryAdvisor`, `SafeGuardAdvisor`, `SimpleLoggerAdvisor`
+- Eingebaut: `MessageChatMemoryAdvisor`, `SafeGuardAdvisor`, `SimpleLoggerAdvisor`
 - **Eigene** Advisors: Metriken, Logging, Guardrails
 - Frei kombinierbar via `defaultAdvisors(...)`
 
@@ -433,6 +357,52 @@ layout: two-cols-header
 layoutClass: gap-8
 ---
 
+# Agentic Pattern: Evaluator-Optimizer
+
+::left::
+
+Ein LLM verbessert seine Ausgabe in einer **Kritik-Schleife** — statt einmal zu raten, iteriert es bis ein Qualitätsmaßstab erfüllt ist.
+
+- **Generator** erzeugt einen Vorschlag (z. B. SQL aus natürlicher Sprache)
+- **Evaluator** prüft zweistufig: `SqlGuard` deterministisch → LLM-Richter
+- Feedback fließt als Kontext in den **nächsten Versuch**
+- Harte `maxIterations`-Grenze schützt vor Endlosschleifen
+- `attempts`-Liste macht den Fortschritt sichtbar (v1 scheitert, v2 grün)
+
+<div class="mt-4 text-xs opacity-70">
+📁 <code>feature16_evaluator/SqlEvaluatorOptimizer.java</code><br/>
+🔗 <code>GET /api/evaluator/sql?question=…</code>
+</div>
+
+::right::
+
+```java
+for (int i = 1; i <= maxIterations; i++) {
+    sql = generator.generate(sql, feedback);
+    Evaluation ev = evaluator.evaluate(sql);
+    attempts.add(new Attempt(i, sql, ev));
+
+    if (ev.valid()) return new Outcome(true, sql, attempts);
+    feedback = ev.feedback(); // Kritik → nächster Versuch
+}
+return new Outcome(false, sql, attempts);
+```
+
+```json
+{ "attempts": [
+    { "iteration": 1,
+      "evaluation": { "valid": false,
+        "feedback": "Spalte 'alter' existiert nicht" }},
+    { "iteration": 2,
+      "evaluation": { "valid": true }}
+]}
+```
+
+---
+layout: two-cols-header
+layoutClass: gap-8
+---
+
 # Live-Demo — am Projekt ausprobieren
 
 ::left::
@@ -452,7 +422,7 @@ http://localhost:8080
 
 <div class="mt-3 text-xs opacity-70">
 📁 <code>src/main/resources/static/index.html</code><br/>
-Visualisiert Structured Output, Tool Calling & RAG-Quellen.
+Visualisiert Structured Output, Tool Calling & Agentic Patterns.
 </div>
 
 ::right::
@@ -468,13 +438,9 @@ curl -X POST localhost:8080/api/tickets/analyze \
 # 4 · Tool Calling
 curl "localhost:8080/api/tools?message=Monitore+auf+Lager?"
 
-# 5 · RAG – Kontext ohne API-Key
-curl "localhost:8080/api/rag/sources?question=Was+ist+RAG"
+# Agentic Pattern – Evaluator-Optimizer
+curl "localhost:8080/api/evaluator/sql?question=Versicherte+ueber+65?"
 ```
-
-<div class="mt-2 text-xs opacity-70">
-Tipp: <code>/api/rag/sources</code> & <code>/api/embeddings/similarity</code> laufen ohne API-Key.
-</div>
 
 ---
 layout: default
@@ -490,7 +456,7 @@ class: text-left
 ### Warum Spring AI?
 - 🍃 **Idiomatisch** — DI, Beans, Autoconfig, Tests, CI wie gewohnt
 - 🔌 **Provider-agnostisch** — Modell tauschen ohne Code-Umbau
-- 🧱 **Komponierbar** — Tools, RAG, Memory als Advisors kombinieren
+- 🧱 **Komponierbar** — Tools, Memory, Advisors · Agentic Patterns
 - 🚀 **Vom Snippet zur Produktion** — DB-Persistenz, Tests, CI im Repo
 
 </div>
