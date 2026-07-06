@@ -104,13 +104,14 @@ const FEATURES = [
   { id: "pgvector",   icon: "database",       name: "pgvector",          endpoint: "/api/pgvector" },
   { id: "docsrag",    icon: "cloud_sync",     name: "Docs-RAG Pipeline", endpoint: "/api/docs-rag" },
   { id: "moderation", icon: "shield",         name: "Moderation",        endpoint: "/api/moderation" },
+  { id: "errortriage", icon: "bug_report",    name: "Fehler-Triage",     endpoint: "/api/errors/trigger" },
 ];
 
 // Gruppierung der Nav-Items in drei einklappbare Themenblöcke.
 const NAV_GROUPS = [
   { label: "Agentic Patterns",            icon: "smart_toy",     ids: ["gateway", "tools", "evaluator", "papers"] },
   { label: "Retrieval & Daten (pgvector)", icon: "database",      ids: ["rag", "docsrag", "db", "pgvector"] },
-  { label: "LLM-Bausteine",               icon: "deployed_code", ids: ["structured", "moderation", "advisors"] },
+  { label: "LLM-Bausteine",               icon: "deployed_code", ids: ["structured", "moderation", "advisors", "errortriage"] },
 ];
 
 const FEATURE_BY_ID = Object.fromEntries(FEATURES.map(f => [f.id, f]));

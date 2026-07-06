@@ -56,4 +56,18 @@ class StaticUiTest {
         // im Navigations-Menue registriert
         assertThat(read("static/components.jsx")).contains("Exploration");
     }
+
+    @Test
+    void fehlerTriagePanelIstVerdrahtet() throws Exception {
+        String panels = read("static/panels.jsx");
+        assertThat(panels)
+                .contains("ErrorTriagePanel")
+                .contains("/api/errors/trigger")
+                .contains("/api/errors/live")
+                .contains("/api/errors/stats")
+                // im PANELS-Register eingetragen
+                .contains("errortriage: ErrorTriagePanel");
+        // im Navigations-Menue registriert
+        assertThat(read("static/components.jsx")).contains("errortriage");
+    }
 }
