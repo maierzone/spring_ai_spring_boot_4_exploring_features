@@ -1108,10 +1108,136 @@ function PapersPanel() {
   );
 }
 
+// --- Feature 21: KI-gestuetzte Fehler-Triage am globalen Exception-Handler ---
+const SEV_COLORS = { LOW: "#1E7D45", MEDIUM: "#9A6700", HIGH: "#C2410C", CRITICAL: "#BA1A1A" };
+
+function ErrorTriagePanel() {
+  const KINDS = [
+    { kind: "npe",        label: "NullPointer (500)" },
+    { kind: "state",      label: "IllegalState (500)" },
+    { kind: "arithmetic", label: "Arithmetic (500)" },
+    { kind: "badrequest", label: "IllegalArgument (400)" },
+    { kind: "notfound",   label: "NotFound (404)" },
+  ];
+  const [problem, setProblem] = useState(null);
+  const [live, setLive] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, run] = useFetch();
+
+  const loadState = async () => {
+    const [l, s] = await Promise.all([
+      fetch("/api/errors/live").then(r => r.json()),
+      fetch("/api/errors/stats").then(r => r.json()),
+    ]);
+    setLive(l); setStats(s);
+  };
+
+  const trigger = (kind) => run(async () => {
+    setErr(null);
+    try {
+      // Der Endpunkt wirft absichtlich – die Antwort ist immer ein ProblemDetail (4xx/5xx).
+      const res = await fetch("/api/errors/trigger?kind=" + encodeURIComponent(kind));
+      const body = await res.json();
+      setProblem({ httpStatus: res.status, ...body });
+      await loadState();
+    } catch (e) {
+      setErr(e.message);
+    }
+  });
+
+  const refresh = () => run(async () => { setErr(null); try { await loadState(); } catch (e) { setErr(e.message); } });
+
+  return (
+    <Panel icon="bug_report" eyebrow="21_exceptiontriage — triage.sh"
+      title="Fehler-Triage · Globaler Exception-Handler"
+      hint={<>Ein globaler <span className="inline-code">@RestControllerAdvice</span> uebersetzt jede Ausnahme in ein RFC-9457-<span className="inline-code">ProblemDetail</span> und laesst Claude sie per <b>Structured Output</b> einordnen. <b>1. Klick</b> auf eine 500er-Art → generische Meldung + <span className="inline-code">errorId</span>, Analyse laeuft <i>asynchron</i> an. <b>2. Klick</b> derselben Art → Cache-Hit: KI-formulierte Meldung kommt synchron. 4xx wird bewusst <i>nicht</i> triagiert.</>}>
+      <label className="field-label">Fehler ausloesen</label>
+      <div className="row" style={{ flexWrap: "wrap" }}>
+        {KINDS.map(k => (
+          <Button key={k.kind} variant="outlined" icon="bolt" busy={busy} onClick={() => trigger(k.kind)}>{k.label}</Button>
+        ))}
+        <Button icon="refresh" busy={busy} onClick={refresh}>live aktualisieren</Button>
+      </div>
+
+      {problem && (
+        <div className="viz" style={{ gridTemplateColumns: "1fr 1fr" }}>
+          <div className="viz-card">
+            <div className="vc-label">HTTP-Status</div>
+            <span className="cat-badge" style={{ background: problem.httpStatus >= 500 ? "#BA1A1A" : "#9A6700" }}>
+              {problem.httpStatus} {problem.title}
+            </span>
+          </div>
+          <div className="viz-card">
+            <div className="vc-label">Einordnung</div>
+            {problem.category
+              ? <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  <span className="cat-badge" style={{ background: "#1B4D89" }}>{problem.category}</span>
+                  <span className="cat-badge" style={{ background: SEV_COLORS[problem.severity] || "#64748b" }}>{problem.severity}</span>
+                  {problem.retriable && <span className="cat-badge" style={{ background: "#1E7D45" }}>retriable</span>}
+                </div>
+              : <span className="hint">Analyse laeuft … (erneut klicken)</span>}
+          </div>
+          <div className="viz-card full">
+            <div className="vc-label">Meldung an den Client (detail)</div>
+            <div className="summary">{problem.detail}</div>
+          </div>
+          <div className="viz-card full">
+            <div className="vc-label">Korrelation</div>
+            <div className="summary" style={{ fontFamily: "var(--mono, monospace)", fontSize: ".85em" }}>
+              errorId: {problem.errorId || "–"}<br />fingerprint: {problem.fingerprint || "–"}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {live.length > 0 && (
+        <React.Fragment>
+          <label className="field-label" style={{ marginTop: 16 }}>Fingerprint-Cache (Dedup live)</label>
+          <div className="viz" style={{ gridTemplateColumns: "1fr" }}>
+            {live.map((e, i) => (
+              <div className="viz-card full" key={i}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span className="summary" style={{ fontFamily: "var(--mono, monospace)", fontSize: ".82em" }}>{e.fingerprint}</span>
+                  <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <span className="cat-badge" style={{ background: "#334155" }}>×{e.count}</span>
+                    {e.analyzed
+                      ? <span className="cat-badge" style={{ background: SEV_COLORS[e.triage.severity] || "#64748b" }}>{e.triage.category} · {e.triage.severity}</span>
+                      : <span className="cat-badge" style={{ background: "#9A6700" }}>analysiert …</span>}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </React.Fragment>
+      )}
+
+      {stats && (stats.byCategory.length > 0 || stats.bySeverity.length > 0) && (
+        <div className="viz" style={{ gridTemplateColumns: "1fr 1fr" }}>
+          <div className="viz-card">
+            <div className="vc-label">Persistiert · nach Kategorie</div>
+            {stats.byCategory.map(c => (
+              <div key={c.category} className="summary">{c.category}: <b>{c.count}</b></div>
+            ))}
+          </div>
+          <div className="viz-card">
+            <div className="vc-label">Persistiert · nach Severity</div>
+            {stats.bySeverity.map(s => (
+              <div key={s.severity} className="summary">{s.severity}: <b>{s.count}</b></div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <ConsoleOut text={err} error />
+    </Panel>
+  );
+}
+
 const PANELS = {
   gateway: GatewayPanel, structured: StructuredPanel, tools: ToolsPanel, rag: RagPanel,
   advisors: AdvisorsPanel,
   db: DbPanel, evaluator: EvaluatorPanel, pgvector: PgVectorPanel, docsrag: DocsRagPanel,
-  moderation: ModerationPanel, papers: PapersPanel,
+  moderation: ModerationPanel, papers: PapersPanel, errortriage: ErrorTriagePanel,
 };
 Object.assign(window, { PANELS });
